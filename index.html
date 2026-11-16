@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Isha Yatra – visit Isha Yoga Center from anywhere</title>
+<meta name="description" content="A free fan-made 3D walk through Isha Yoga Center: Adiyogi, Dhyanalinga, Linga Bhairavi, Bhiksha Hall, Upa Yoga and more. Play together and chat, in 30 languages.">
+<meta property="og:title" content="Isha Yatra">
+<meta property="og:description" content="Visit Isha Yoga Center from anywhere. Play together, in 30 languages.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#2a1d14">
+<style>
+html,body{margin:0;height:100%;background:#2a1d14;color:#fff3e2;font-family:system-ui,sans-serif}
+#l{position:fixed;inset:0;display:grid;place-items:center;text-align:center}
+#l b{display:block;font:400 40px Georgia,serif;letter-spacing:.02em}#l b span{color:#f2922e}
+#l i{display:block;margin-top:14px;font-style:normal;font-size:14px;opacity:.75}
+#l .bar{width:160px;height:3px;margin:18px auto 0;background:rgba(255,243,226,.15);border-radius:3px;overflow:hidden}
+#l .bar div{width:40%;height:100%;background:#f2922e;animation:m 1.2s ease-in-out infinite}
+@keyframes m{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+</style>
+</head>
+<body>
+<div id="l"><div><b>Isha <span>Yatra</span></b><div class="bar"><div></div></div><i id="msg">Loading…</i></div></div>
+<script>
+(function(){
+  var GAME = '/game-v6.html';
+  function fail(){ document.getElementById('msg').textContent = 'Could not load the game. Please check your connection and refresh.'; }
+  fetch(GAME, {cache: 'force-cache'}).then(function(r){ if (!r.ok) throw 0; return r.text(); })
+    .then(function(t){ document.open(); document.write(t); document.close(); })
+    .catch(fail);
+})();
+</script>
+</body>
+</html>
