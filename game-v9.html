@@ -2274,7 +2274,7 @@ const Net = {
     const key = JSON.stringify(pres);
     if (!force && key === this.sent) return; this.sent = key;
     if (this.mode === 'room' && Priv.pub) pres.k = Priv.pub;
-    if (this.mode === 'cloud') { if (this.cl) { this.cl.hb = 0; this.cl.ch.send({type: 'broadcast', event: 'st', payload: {i: this.cl.id, x: pres.x, z: pres.z, r: pres.r, p: pres.p, s: pres.s, h: pres.h}}).catch(() => {}); } return; }
+    if (this.mode === 'cloud') { if (this.cl) { this.cl.hb = 0; this.cl.hbAt = performance.now(); this.cl.ch.send({type: 'broadcast', event: 'st', payload: {i: this.cl.id, x: pres.x, z: pres.z, r: pres.r, p: pres.p, s: pres.s, h: pres.h}}).catch(() => {}); } return; }
     this.room.presence(pres).catch(() => {});
   },
   sync(ch){
@@ -2346,7 +2346,7 @@ const Net = {
     Voice.update(dt); Priv.near(dt);
     if (this.state !== 'live') return;
     if ((this.pushT -= dt) <= 0) { this.pushT = this.mode === 'cloud' ? .2 : .1; let force = false;
-      if (this.cl && (this.cl.hb += .2) > 3) force = true; this.push(force);
+      if (this.cl && performance.now() - (this.cl.hbAt || 0) > 2500) force = true; this.push(force);
       if (this.cl) { const now = performance.now(); for (const [id, q] of this.cl.peers) if (q.t && now - q.t > 20000) { q.st = null; q.t = 0; this.remove(id); } } }
     for (const r of this.remotes.values()) {
       const a = r.a, p = a.g.position, dx = r.tx - p.x, dz = r.tz - p.z, d = Math.hypot(dx, dz);
@@ -2500,9 +2500,21 @@ const Priv = {
     $('#nearCall').disabled = !!Voice.peer; $('#nearCall').hidden = !Voice.ok();
   },
 };
+/* keeps presence alive even while the frame loop is paused (permission prompts, a quick app switch) */
+setInterval(() => { if (Net.state === 'live' && Net.cl && performance.now() - (Net.cl.hbAt || 0) > 4000) Net.push(true); }, 2000);
 const Voice = {
   peer: null, state: 'idle', pc: null, stream: null, remote: null, timer: 0, t0: 0, muted: false, tick: 0, cid: '',
-  ice: [{urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302']}, {urls: 'stun:stun.cloudflare.com:3478'}],
+  ice: [{urls: 'stun:stun.cloudflare.com:3478'}, {urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302']}], iceP: null, relay: null, relayAt: 0,
+  /* TURN relays let calls connect when both players are behind strict routers or mobile networks */
+  async getIce(){
+    if (this.relay && performance.now() - this.relayAt < 3.6e6) return this.relay.concat(this.ice);
+    try { const c = new AbortController(), t = setTimeout(() => c.abort(), 5000);
+      const r = await fetch('/api/ice', {cache: 'no-store', signal: c.signal}); clearTimeout(t);
+      const j = r.ok ? await r.json() : null; const list = j && Array.isArray(j.iceServers) ? j.iceServers.filter(x => x && x.urls) : [];
+      if (list.length) { this.relay = list; this.relayAt = performance.now(); return list.concat(this.ice); }
+    } catch (_) {}
+    return this.ice;
+  },
   async mic(){
     if (this.stream) return true;
     try { this.stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}, video: false}); return true; }
@@ -2514,6 +2526,7 @@ const Voice = {
     if (this.peer || !Net.remotes.has(id) || !this.ok()) return;
     if (!navigator.mediaDevices || !window.RTCPeerConnection) { toast(tr('Could not connect the call')); return; }
     this.peer = id; this.state = 'calling'; this.cid = Math.random().toString(36).slice(2, 10); this.render();
+    this.iceP = this.getIce();
     if (!await this.mic()) { this.cleanup(); return; }
     if (this.peer !== id) return;
     if (!await this.sig({s: 'ring'})) { this.end(tr('Private chat needs a newer browser')); return; }
@@ -2521,14 +2534,16 @@ const Voice = {
   },
   async accept(){
     if (this.state !== 'ringing') return; this.state = 'connecting'; this.render(); clearTimeout(this.timer);
+    this.iceP = this.getIce();
     if (!await this.mic()) { this.sig({s: 'decline'}); this.cleanup(); return; }
+    await this.iceP; if (this.state !== 'connecting') return;
     this.sig({s: 'accept'});
-    this.timer = setTimeout(() => { if (this.state === 'connecting') { this.sig({s: 'hang'}); this.end(tr('Could not connect the call')); } }, 25000);
+    this.timer = setTimeout(() => { if (this.state === 'connecting') { this.sig({s: 'hang'}); this.end(tr('Could not connect the call')); } }, 35000);
   },
   decline(){ if (this.state !== 'ringing') return; this.sig({s: 'decline'}); this.cleanup(); },
   hang(){ if (!this.peer) return; this.sig({s: 'hang'}); this.end(tr('Call ended')); },
-  makePc(){
-    const pc = new RTCPeerConnection({iceServers: this.ice}); this.pc = pc;
+  makePc(ice){
+    const pc = new RTCPeerConnection({iceServers: ice || this.ice}); this.pc = pc;
     for (const tk of this.stream.getTracks()) pc.addTrack(tk, this.stream);
     pc.ontrack = e => { const a = $('#voiceAudio'); a.srcObject = e.streams[0]; a.play().catch(() => {}); };
     pc.onicecandidate = e => { if (!e.candidate) return; (this.outIce || (this.outIce = [])).push(e.candidate.toJSON());
@@ -2557,11 +2572,12 @@ const Voice = {
     try {
       if (s === 'accept' && this.state === 'calling') {
         this.state = 'connecting'; this.render(); clearTimeout(this.timer);
-        this.timer = setTimeout(() => { if (this.state === 'connecting') { this.sig({s: 'hang'}); this.end(tr('Could not connect the call')); } }, 25000);
-        const pc = this.makePc(); await pc.setLocalDescription(await pc.createOffer());
+        this.timer = setTimeout(() => { if (this.state === 'connecting') { this.sig({s: 'hang'}); this.end(tr('Could not connect the call')); } }, 35000);
+        const ice = await (this.iceP || this.getIce()); if (this.state !== 'connecting' || this.pc) return;
+        const pc = this.makePc(ice); await pc.setLocalDescription(await pc.createOffer());
         this.sig({s: 'offer', d: pc.localDescription.toJSON()});
       } else if (s === 'offer' && this.state === 'connecting' && !this.pc && m.d && m.d.type === 'offer') {
-        const pc = this.makePc(); await pc.setRemoteDescription(m.d); await pc.setLocalDescription(await pc.createAnswer());
+        const pc = this.makePc(await (this.iceP || this.getIce())); await pc.setRemoteDescription(m.d); await pc.setLocalDescription(await pc.createAnswer());
         this.sig({s: 'answer', d: pc.localDescription.toJSON()}); this.flush();
       } else if (s === 'answer' && this.pc && m.d && m.d.type === 'answer' && this.pc.signalingState === 'have-local-offer') {
         await this.pc.setRemoteDescription(m.d); this.flush();
