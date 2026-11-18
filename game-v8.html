@@ -338,7 +338,7 @@ const I18N = {"hi": {"Isha": "ईशा", "Yatra": "यात्रा", "Walk t
 const LANGS = [["en", "English"], ["hi", "हिन्दी"], ["bn", "বাংলা"], ["mr", "मराठी"], ["gu", "ગુજરાતી"], ["pa", "ਪੰਜਾਬੀ"], ["ta", "தமிழ்"], ["te", "తెలుగు"], ["kn", "ಕನ್ನಡ"], ["ml", "മലയാളം"], ["ur", "اردو"], ["ne", "नेपाली"], ["vi", "Tiếng Việt"], ["id", "Bahasa Indonesia"], ["th", "ไทย"], ["zh", "中文"], ["ja", "日本語"], ["ko", "한국어"], ["ru", "Русский"], ["uk", "Українська"], ["pl", "Polski"], ["de", "Deutsch"], ["nl", "Nederlands"], ["fr", "Français"], ["es", "Español"], ["pt", "Português"], ["it", "Italiano"], ["tr", "Türkçe"], ["ar", "العربية"], ["fa", "فارسی"], ["sa", "संस्कृतम्"]];
 let lang = 'en';
 /* ---------- fundraising goal: update `raised` and `updated` when new donations arrive ---------- */
-const FUND = {goal: 100, raised: 41.5, updated: '2026-11-16', thanks: ['Farid', 'Adam', 'Shiva Kumar'], items: [['Own website & domain (1 year)', 15], ['Multiplayer server (first 3 months)', 30], ['AI development tools', 55]]};
+const FUND = {goal: 100, raised: 51.5, updated: '2026-11-18', thanks: ['Farid', 'Adam', 'Shiva Kumar', 'Riddhi'], items: [['Own website & domain (1 year)', 15], ['Multiplayer server (first 3 months)', 30], ['AI development tools', 55]]};
 const RTL = new Set(['ar', 'fa', 'ur']);
 function tr(key, vars){ let t = (I18N[lang] && I18N[lang][key]) || key; if (vars) for (const k in vars) t = t.split('{' + k + '}').join(vars[k]); return t; }
 const rand = (a,b) => a + Math.random()*(b-a);
