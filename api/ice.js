@@ -1,11 +1,17 @@
-// Hands the game short-lived TURN relay credentials for voice calls.
-// The Cloudflare key stays on the server: set CF_TURN_KEY_ID and CF_TURN_API_TOKEN in the Vercel project settings.
+// Hands the game TURN relay servers for voice calls. Set in the Vercel project settings either
+//   TURN_URLS (comma separated, e.g. turn:relay1.expressturn.com:3478), TURN_USERNAME, TURN_CREDENTIAL  (free static relay), or
+//   CF_TURN_KEY_ID and CF_TURN_API_TOKEN  (Cloudflare, short-lived credentials).
 // Without them this returns an empty list and the game falls back to STUN only.
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const empty = () => res.status(200).json({ iceServers: [] });
   const origin = req.headers.origin || req.headers.referer || '';
   if (origin && !/^https:\/\/(isha-yatra[\w-]*\.vercel\.app)(\/|$)/.test(origin)) return empty();
+  const { TURN_URLS, TURN_USERNAME, TURN_CREDENTIAL } = process.env;
+  if (TURN_URLS && TURN_USERNAME && TURN_CREDENTIAL) {
+    const urls = TURN_URLS.split(',').map(u => u.trim()).filter(Boolean);
+    return res.status(200).json({ iceServers: [{ urls, username: TURN_USERNAME, credential: TURN_CREDENTIAL }] });
+  }
   const id = process.env.CF_TURN_KEY_ID, token = process.env.CF_TURN_API_TOKEN;
   if (!id || !token) return empty();
   try {
