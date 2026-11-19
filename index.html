@@ -23,7 +23,7 @@ html,body{margin:0;height:100%;background:#2a1d14;color:#fff3e2;font-family:syst
 <div id="l"><div><b>Isha <span>Yatra</span></b><div class="bar"><div></div></div><i id="msg">Loading…</i></div></div>
 <script>
 (function(){
-  var GAME = '/game-v11.html';
+  var GAME = '/game-v12.html';
   function fail(){ document.getElementById('msg').textContent = 'Could not load the game. Please check your connection and refresh.'; }
   fetch(GAME, {cache: 'force-cache'}).then(function(r){ if (!r.ok) throw 0; return r.text(); })
     .then(function(t){ document.open(); document.write(t); document.close(); })
