@@ -371,10 +371,11 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 32, 16), new THREE.Sha
 }));
 scene.add(sky);
 (() => {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d');
-  for (let i=0;i<14;i++){ const x = rand(50,206), y = rand(50,90), r = rand(22,44); const gr = g.createRadialGradient(x,y,0,x,y,r);
-    gr.addColorStop(0,'rgba(255,255,255,.85)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0,0,256,128); }
-  const tex = new THREE.CanvasTexture(c);
+  const W = 256, H = 128, px = new Uint8Array(W*H*4), A = new Float32Array(W*H);
+  for (let i=0;i<14;i++){ const cx = rand(50,206), cy = rand(50,90), r = rand(22,44);
+    for (let y = Math.max(0, cy-r|0); y < Math.min(H, cy+r+1); y++) for (let x = Math.max(0, cx-r|0); x < Math.min(W, cx+r+1); x++){ const d = Math.hypot(x-cx, y-cy)/r; if (d < 1){ const a = .85*(1-d), k = y*W+x; A[k] = A[k] + a - A[k]*a; } } }
+  for (let k=0;k<W*H;k++){ px[k*4] = px[k*4+1] = px[k*4+2] = 255; px[k*4+3] = A[k]*255; }
+  const tex = new THREE.DataTexture(px, W, H, THREE.RGBAFormat); tex.flipY = true; tex.magFilter = tex.minFilter = THREE.LinearFilter; tex.needsUpdate = true;
   for (let i=0;i<16;i++){ const s = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, fog:false, transparent:true, depthWrite:false, opacity:rand(.6,.95), color:0xfff6ea}));
     const a = rand(0, Math.PI*2), d = rand(220, 420); s.position.set(Math.cos(a)*d, rand(110, 190), Math.sin(a)*d); s.scale.set(rand(110,180), rand(45,70), 1); scene.add(s); }
 })();
@@ -398,7 +399,7 @@ function garland(parent, pts, r, color, beads){
   add(parent, new THREE.TubeGeometry(curve, 64, r, 7), M(color));
   if (beads) for (let i=1;i<beads.n;i++){ const p = curve.getPoint(i/beads.n); add(parent, new THREE.SphereGeometry(r*1.5, 8, 6), M(beads.c), p.x, p.y, p.z, false); }
 }
-const colliders = [];
+const colliders = [], camBlockers = [];
 const col = (x, z, r) => colliders.push({x, z, r});
 
 /* ---------- textures ---------- */
@@ -409,9 +410,11 @@ function noiseTex(base, specks, n, size=256){
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
 }
 const glowTex = (() => {
-  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
-  const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,220,150,1)'); gr.addColorStop(.35,'rgba(255,160,60,.55)'); gr.addColorStop(1,'rgba(255,120,30,0)');
-  g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c);
+  const S = 64, px = new Uint8Array(S*S*4), lerp = (a, b, t) => a + (b - a)*t;
+  for (let y=0;y<S;y++) for (let x=0;x<S;x++){ const d = Math.min(1, Math.hypot(x + .5 - 32, y + .5 - 32)/32), k = (y*S+x)*4;
+    const c = d < .35 ? [lerp(255,255,d/.35), lerp(220,160,d/.35), lerp(150,60,d/.35), lerp(1,.55,d/.35)] : [255, lerp(160,120,(d-.35)/.65), lerp(60,30,(d-.35)/.65), lerp(.55,0,(d-.35)/.65)];
+    px[k] = c[0]; px[k+1] = c[1]; px[k+2] = c[2]; px[k+3] = c[3]*255; }
+  const t = new THREE.DataTexture(px, S, S, THREE.RGBAFormat); t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return t;
 })();
 const brickTex = (() => {
   const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
@@ -612,7 +615,7 @@ function pickSpot(list, near){
 
 /* ---------- Nandi: lying bull, head raised, bells at the neck ---------- */
 (() => {
-  const g = new THREE.Group(); g.position.set(N.x, 0, N.z); g.rotation.y = Math.PI; g.scale.setScalar(1.35); scene.add(g);
+  const g = new THREE.Group(); g.position.set(N.x, 0, N.z); g.rotation.y = Math.PI; g.scale.setScalar(1.35); scene.add(g); camBlockers.push(g);
   const bm = new THREE.MeshStandardMaterial({color:0x26282c, roughness:.32, metalness:.35});
   add(g, new THREE.CylinderGeometry(2.6, 2.75, .35, 40), M(0x8f887c), 0, .17, 0);
   ell(g, bm, 0, 1.05, -.3, .95, .72, 1.75, 28);
@@ -877,9 +880,9 @@ const POSES = {
   eat:         {leg:-1.45,splay:.6,  armX:-.7,  armOut:.3,  rootY:-.34, tilt:.12, head:.18, eyes:.6, aR:-.35},
   dig:         {leg:-.15, splay:.25, armX:-1.0, armOut:-.3, rootY:-.06, tilt:.35, head:.15, eyes:.8},
   feed:        {leg:0,    splay:.1,  armX:-.15, armOut:.1,  rootY:-.04, tilt:.3,  head:.3,  eyes:.7, aR:-1.15},
-  gaja:        {leg:-.35, splay:.35, armX:-.55, armOut:-.55,rootY:-.24, tilt:.75, head:-.35,eyes:1, lL:-.3, lR:.5},
-  simha:       {leg:-.5,  splay:.45, armX:-1.5, armOut:.45, rootY:-.3,  tilt:.35, head:-.35,eyes:1, lL:-.2, lR:.4},
-  ashwa:       {leg:-.3,  splay:.55, armX:-.6,  armOut:.2,  rootY:-.28, tilt:.05, head:0,   eyes:1, aL:-2.0, aR:-.5, spin:.45},
+  gaja:        {leg:-.35, splay:.35, armX:-.55, armOut:-.55,rootY:-.1,  tilt:.6,  head:-.35,eyes:1, lL:-.3, lR:.5},
+  simha:       {leg:-.5,  splay:.45, armX:-1.5, armOut:.45, rootY:-.14, tilt:.35, head:-.35,eyes:1, lL:-.2, lR:.4},
+  ashwa:       {leg:-.3,  splay:.55, armX:-.6,  armOut:.2,  rootY:-.13, tilt:.05, head:0,   eyes:1, aL:-2.0, aR:-.5, spin:.45},
   kickp:       {leg:0,    splay:.05, armX:-.4,  armOut:.5,  rootY:.05,  tilt:-.18,head:.1,  eyes:1, lL:-1.7, aL:-.8, aR:.8},
   silambam:    {leg:-.25, splay:.35, armX:-1.25,armOut:-.35,rootY:-.12, tilt:.08, head:0,   eyes:1},
   joy:         {leg:0,    splay:.1,  armX:-2.7, armOut:.45, rootY:.04,  tilt:-.05,head:-.15,eyes:1},
@@ -890,7 +893,7 @@ const POSES = {
   nada:        {leg:-1.45,splay:.6,  armX:-.7,  armOut:.3,  rootY:-.34, tilt:0,   head:.04, eyes:.05},
   sip:         {leg:-1.45,splay:.6,  armX:-.7,  armOut:.3,  rootY:-.34, tilt:-.05,head:-.2, eyes:.6, aR:-1.5, oR:-.55},
   hug:         {leg:-.1,  splay:.12, armX:-1.4, armOut:-.42,rootY:-.06, tilt:.25, head:.2,  eyes:.15},
-  wash:        {leg:0,    splay:.08, armX:-1.0, armOut:-.5, rootY:-.03, tilt:.4,  head:.3,  eyes:.6},
+  wash:        {leg:0,    splay:.08, armX:-1.25,armOut:-.45,rootY:-.03, tilt:.22, head:.25, eyes:.6},
 };
 const PX_KEYS = ['lL', 'lR', 'aL', 'aR', 'spin', 'oL', 'oR'];
 Object.values(POSES).forEach(p => PX_KEYS.forEach(k => { if (p[k] === undefined) p[k] = 0; }));
@@ -1701,7 +1704,8 @@ function makeCow(color, s = 1){
 const camBox = new THREE.Vector3();
 function updateRoofs(){
   for (const R0 of ROOFS) { const c = camera.position, pp = player.a.g.position;
-    const under = (pp.x > R0.x0 && pp.x < R0.x1 && pp.z > R0.z0 && pp.z < R0.z1) || (c.x > R0.x0 - 2 && c.x < R0.x1 + 2 && c.z > R0.z0 - 2 && c.z < R0.z1 + 2 && c.y < R0.y + 1.5);
+    const camIn = c.x > R0.x0 && c.x < R0.x1 && c.z > R0.z0 && c.z < R0.z1 && c.y < R0.y - .2;
+    const under = !camIn && ((pp.x > R0.x0 && pp.x < R0.x1 && pp.z > R0.z0 && pp.z < R0.z1) || (c.x > R0.x0 - 2 && c.x < R0.x1 + 2 && c.z > R0.z0 - 2 && c.z < R0.z1 + 2 && c.y < R0.y + 1.5));
     const o = under ? .15 : 1; R0.mats.forEach(mt => { mt.opacity += (o - mt.opacity) * .15; mt.depthWrite = mt.opacity > .9; }); }
 }
 const GS_GRAB = {x: GS.x - 5.8, z: GS.z + 2.75, ry: 0, occ: null};
@@ -1827,7 +1831,7 @@ const birds = [];
       if (r < .4 && sn < SN - 3) { const k = 1 + (Math.random()*3|0), c = pick(SC);
         for (let j = 0; j < k; j++) { d.position.set(x + rand(-.45, .45), 0, z + rand(-.45, .45)); d.rotation.set(0, rand(0, 6), 0); d.scale.setScalar(rand(.55, 1.15)); d.updateMatrix(); si.setMatrixAt(sn, d.matrix); si.setColorAt(sn, c.clone().offsetHSL(0, 0, rand(-.04, .04))); sn++; } }
       else if (r < .52 && rn < RN) { d.position.set(x, 0, z); d.rotation.set(0, rand(0, 6), 0); d.scale.setScalar(rand(.5, 1.4)); d.updateMatrix(); ri.setMatrixAt(rn, d.matrix); ri.setColorAt(rn, pick(RC)); rn++; }
-      else if (wn < WN - 8) { const c = pick(WC);
+      else if (wn < WN - 8 && z < 22) { const c = pick(WC);
         for (let j = 0; j < 7; j++) { d.position.set(x + rand(-.5, .5), rand(.1, .2), z + rand(-.5, .5)); d.rotation.set(0, 0, 0); d.scale.setScalar(rand(.7, 1.2)); d.updateMatrix(); wi.setMatrixAt(wn, d.matrix); wi.setColorAt(wn, c); wn++; } }
     }
     si.count = sn; ri.count = rn; wi.count = wn; si.castShadow = true; si.receiveShadow = true; ri.castShadow = true; ri.receiveShadow = true; scene.add(si, ri, wi); }
@@ -2116,11 +2120,11 @@ const ACTIONS = {
       jasmine(s); Sound.bell(520, .15); toast(tr('Devi Dandam: lying down in full surrender at Her feet')); }); },
   otherKund(){ const k = KUNDS.find(k => k.gender === save.gender); goTo(routeFor(k.stairTop), () => toast(tr('Welcome to {kund}', {kund: tr(k.name)}))); },
   board(){
-    standUp(); player.path = null; player.riding = true; player.a.noGround = true; player.a.pose = 'sit';
+    standUp(); player.path = null; player.riding = true; player.a.noGround = true; player.a.pose = 'sit'; cam.yaw = cart.g.rotation.y + Math.PI; cam.pitch = .26;
     if (cart.state === 'move' && cart.dest === null) cart.state = 'wait';
     cart.wait = Infinity; refreshUI(); toast(tr('Namaste! Pick where the cart should go.')); },
   getOff(){
-    player.riding = false; player.a.noGround = false; player.a.pose = 'idle';
+    player.riding = false; player.a.noGround = false; player.a.pose = 'idle'; player.a.g.visible = true; cam.dist = 7.6; cam.pitch = .26;
     const p = cart.g.localToWorld(new THREE.Vector3(2.4, 0, .4)); player.a.g.position.set(p.x, heightAt(p.x, p.z), p.z); resolve(player.a.g.position, .4);
     if (cart.state === 'wait') cart.wait = 5;
     nearCart = true; refreshUI(); },
@@ -2140,8 +2144,8 @@ const ACTIONS = {
   foldLeaf(){ const m = player.meal; if (!m || m.phase !== 'done') return; m.phase = 'folded'; const s = m.s;
     Object.values(s.food).forEach(v => v.visible = false); s.leaf.scale.y = .5; s.leaf.position.z = s.leafZ + s.r*.13; s.leaf.position.y = .16; s.leaf.rotation.x = -Math.PI/2 + s.r*.15;
     timedPose(player.a, 'sitNamaskar', 1.6); Sound.bell(880, .1); toast(tr('Folding the leaf towards you says: I am well fed 🙏')); toast(tr('You finished your meal. Annadanam: food offered with love.')); refreshUI(); },
-  washHands(){ const s = {x: BH.x - 11, z: BH.z - 2.4, ry: Math.PI}; goTo(routeFor(s), () => { place(player.a, s); timedPose(player.a, 'wash', 2);
-    setTimeout(() => { burst(BH.x - 11, 1.45, BH.z - 3.3, 8, 'drop'); Sound.splash(); }, 300); toast(tr('Clean hands, grateful heart 💧')); }); },
+  washHands(){ const s = {x: BH.x - 11, z: BH.z - 2.05, ry: Math.PI}; goTo(routeFor(s), () => { place(player.a, s); timedPose(player.a, 'wash', 2.6); cam.yaw = -Math.PI/2 - .35; cam.pitch = .3; cam.dist = 4.4;
+    setTimeout(() => { burst(BH.x - 11, 1.4, BH.z - 3.25, 10, 'drop'); Sound.splash(); }, 300); toast(tr('Clean hands, grateful heart 💧')); }); },
   seva(){ const here = player.a.g.position, c = bhSeats.filter(s => s.occ && s.occ !== player && s.occ.name && !s.served);
     if (!c.length) return toast(tr('Everyone has been served. Thank you! 🙏'));
     const s = c.reduce((b, x) => Math.hypot(x.x-here.x, x.z-here.z) < Math.hypot(b.x-here.x, b.z-here.z) ? x : b), spot = {x: s.x, z: BH.z, ry: s.ry + Math.PI};
@@ -2972,7 +2976,7 @@ $('#startForm').addEventListener('submit', async e => {
 const clock = new THREE.Clock();
 let medSave = 0, lookUp = 0, kundWarn = -9;
 const photoV = new THREE.Vector3();
-const tmp = new THREE.Vector3();
+const tmp = new THREE.Vector3(), camRay = new THREE.Raycaster(), camDir = new THREE.Vector3(), cartEye = new THREE.Vector3();
 function frame(){
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
@@ -3064,22 +3068,46 @@ function frame(){
   if (inside) d = Math.min(d, 7);
   const setCam = dd => camera.position.set(target.x + Math.sin(cam.yaw)*Math.cos(pitch)*dd, target.y + Math.sin(pitch)*dd, target.z + Math.cos(cam.yaw)*Math.cos(pitch)*dd);
   setCam(d);
-  if (inside){ let k = 0; while (k++ < 20){ const r = Math.hypot(camera.position.x-D.x, camera.position.z-D.z); const hMax = .72*Math.sqrt(Math.max(0, R*R - r*r)) - .8;
+  if (inside){ if (domeYaw0 === null) domeYaw0 = cam.yaw;
+    const ap = Math.atan2(pp.x - D.x, pp.z - D.z), rp = Math.hypot(pp.x - D.x, pp.z - D.z), look = cam.yaw - domeYaw0;
+    if (player.sitting) { // seated: see the dome through your own eyes, facing the linga (drag to look around)
+      const ex = D.x + Math.sin(ap)*(rp + .25), ez = D.z + Math.cos(ap)*(rp + .25), fa = ap + Math.PI + look, lp = clamp(cam.pitch - .38, -.5, .9);
+      camera.position.set(ex, pp.y + 1.32, ez); target.set(ex + Math.sin(fa)*Math.cos(lp)*6, pp.y + 1.32 - Math.sin(lp)*6, ez + Math.cos(fa)*Math.cos(lp)*6); }
+    else { const ac = ap + look, rc = R - 1.5, hc = Math.min(3.6, .72*Math.sqrt(R*R - rc*rc) - 1.0);
+      camera.position.set(D.x + Math.sin(ac)*rc, hc, D.z + Math.cos(ac)*rc); target.set(pp.x + (D.x - pp.x)*.55, 1.1, pp.z + (D.z - pp.z)*.55); } }
+  else domeYaw0 = null;
+  if (false){ let k = 0; while (k++ < 20){ const r = Math.hypot(camera.position.x-D.x, camera.position.z-D.z); const hMax = .72*Math.sqrt(Math.max(0, R*R - r*r)) - .8;
       if (r < R - 1.3 && camera.position.y < hMax) break; d *= .88; setCam(d); } }
-  { let k = 0; const inNandi = q => Math.abs(q.x - N.x) < 3.2 && q.z > N.z - 9.4 && q.z < N.z + 3.2 && q.y < 5.6;
-    if (!inNandi(pp)) while (inNandi(camera.position) && k++ < 24) { pitch = Math.min(1.15, pitch + .05); setCam(d); } }
   const minY = Math.max(heightAt(camera.position.x, camera.position.z) + .6, inPool(camera.position) ? -1.0 : .4);
   if (camera.position.y < minY) camera.position.y = minY;
-  target.y += lookUp + .45; camera.lookAt(target);
+  if (inside) { camera.lookAt(target); } else if (camBlockers.length) { camRay.set(target, camDir.subVectors(camera.position, target).normalize()); camRay.far = d;
+    const hit = camRay.intersectObjects(camBlockers, true)[0]; if (hit) { d = Math.max(1.3, hit.distance - .35); setCam(d); } }
+  const hall = !inside && ROOFS.find(R0 => pp.x > R0.x0 && pp.x < R0.x1 && pp.z > R0.z0 && pp.z < R0.z1);
+  if (hall) { pitch = Math.min(pitch, .2); d = Math.min(d, 4.6);
+    const ok = () => camera.position.x > hall.x0 + .35 && camera.position.x < hall.x1 - .35 && camera.position.z > hall.z0 + .35 && camera.position.z < hall.z1 - .35 && camera.position.y < hall.y - .4;
+    // swing the camera toward the middle of the hall until it fits inside, so we look across the hall from within
+    const y0 = cam.yaw, yc = Math.atan2((hall.x0 + hall.x1)/2 - pp.x, (hall.z0 + hall.z1)/2 - pp.z); let dy = Math.atan2(Math.sin(yc - y0), Math.cos(yc - y0)), best = null;
+    cam.yaw = y0; setCam(d); if (ok()) best = y0; else { cam.yaw = yc; setCam(d); best = yc; }
+    cam.yaw = best === null ? y0 : y0 + Math.atan2(Math.sin(best - y0), Math.cos(best - y0)) * Math.min(1, dt*5); setCam(d);
+    let k = 0; while (!ok() && d > 1.6 && k++ < 30) { d *= .9; setCam(d); } }
+  const inCart = player.riding && !photo; pa.g.visible = !inCart && !(inside && player.sitting);
+  if (inCart) { cartEye.set(.5, 2.42, -1.15); cart.g.localToWorld(cartEye); camera.position.copy(cartEye);
+    const lp = clamp(cam.pitch - .2, -.35, .7); target.set(cartEye.x - Math.sin(cam.yaw)*Math.cos(lp)*5, cartEye.y - Math.sin(lp)*5, cartEye.z - Math.cos(cam.yaw)*Math.cos(lp)*5); }
+  else if (!inside) target.y += lookUp + .45;
+  camera.lookAt(target);
   if (photo) { photo.t += dt; const h = heightAt(photo.look.x, photo.look.z);
     camera.position.lerp(photoV.set(photo.camP.x, h + 1.7, photo.camP.z), Math.min(1, photo.t*2.5)); camera.lookAt(photo.look.x, h + 1.15, photo.look.z); }
   sky.position.copy(camera.position); updateMotes(t, pp);
+  { const f = (innerHeight > innerWidth ? 58 : 50) + (inside || player.riding ? 18 : 0); if (Math.abs(camera.fov - f) > .05) { camera.fov += (f - camera.fov) * Math.min(1, dt*4); camera.updateProjectionMatrix(); } }
+  if (player.label) player.label.visible = pa.g.visible && camera.position.distanceTo(pp) > 5.2;
+  if (innerWidth !== lastW || innerHeight !== lastH) { lastW = innerWidth; lastH = innerHeight; renderer.setSize(innerWidth, innerHeight); fitCam(); }
   sun.position.set(pp.x + 55, 85, pp.z + 35); sun.target.position.set(pp.x, 0, pp.z);
   updateRoofs();
   renderer.render(scene, camera);
   if (photo && !photo.snapped && photo.t > 1.8) { photo.snapped = true; const url = renderer.domElement.toDataURL('image/jpeg', .92); flash(); Sound.bell(1100, .08); showPhoto(url);
     const ph = photo; setTimeout(() => { ph.pk.photo = false; if (photo === ph) photo = null; }, 700); }
 }
+let lastW = innerWidth, lastH = innerHeight, domeYaw0 = null;
 function fitCam(){ camera.fov = innerHeight > innerWidth ? 58 : 50; camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); }
 fitCam();
 addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); fitCam(); });
