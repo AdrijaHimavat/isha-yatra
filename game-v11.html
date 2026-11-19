@@ -1704,8 +1704,7 @@ function makeCow(color, s = 1){
 const camBox = new THREE.Vector3();
 function updateRoofs(){
   for (const R0 of ROOFS) { const c = camera.position, pp = player.a.g.position;
-    const camIn = c.x > R0.x0 && c.x < R0.x1 && c.z > R0.z0 && c.z < R0.z1 && c.y < R0.y - .2;
-    const under = !camIn && ((pp.x > R0.x0 && pp.x < R0.x1 && pp.z > R0.z0 && pp.z < R0.z1) || (c.x > R0.x0 - 2 && c.x < R0.x1 + 2 && c.z > R0.z0 - 2 && c.z < R0.z1 + 2 && c.y < R0.y + 1.5));
+    const under = (pp.x > R0.x0 && pp.x < R0.x1 && pp.z > R0.z0 && pp.z < R0.z1) || (c.x > R0.x0 - 2 && c.x < R0.x1 + 2 && c.z > R0.z0 - 2 && c.z < R0.z1 + 2 && c.y < R0.y + 1.5);
     const o = under ? .15 : 1; R0.mats.forEach(mt => { mt.opacity += (o - mt.opacity) * .15; mt.depthWrite = mt.opacity > .9; }); }
 }
 const GS_GRAB = {x: GS.x - 5.8, z: GS.z + 2.75, ry: 0, occ: null};
@@ -2120,11 +2119,11 @@ const ACTIONS = {
       jasmine(s); Sound.bell(520, .15); toast(tr('Devi Dandam: lying down in full surrender at Her feet')); }); },
   otherKund(){ const k = KUNDS.find(k => k.gender === save.gender); goTo(routeFor(k.stairTop), () => toast(tr('Welcome to {kund}', {kund: tr(k.name)}))); },
   board(){
-    standUp(); player.path = null; player.riding = true; player.a.noGround = true; player.a.pose = 'sit'; cam.yaw = cart.g.rotation.y + Math.PI; cam.pitch = .26;
+    standUp(); player.path = null; player.riding = true; player.a.noGround = true; player.a.pose = 'sit';
     if (cart.state === 'move' && cart.dest === null) cart.state = 'wait';
     cart.wait = Infinity; refreshUI(); toast(tr('Namaste! Pick where the cart should go.')); },
   getOff(){
-    player.riding = false; player.a.noGround = false; player.a.pose = 'idle'; player.a.g.visible = true; cam.dist = 7.6; cam.pitch = .26;
+    player.riding = false; player.a.noGround = false; player.a.pose = 'idle';
     const p = cart.g.localToWorld(new THREE.Vector3(2.4, 0, .4)); player.a.g.position.set(p.x, heightAt(p.x, p.z), p.z); resolve(player.a.g.position, .4);
     if (cart.state === 'wait') cart.wait = 5;
     nearCart = true; refreshUI(); },
@@ -2976,7 +2975,7 @@ $('#startForm').addEventListener('submit', async e => {
 const clock = new THREE.Clock();
 let medSave = 0, lookUp = 0, kundWarn = -9;
 const photoV = new THREE.Vector3();
-const tmp = new THREE.Vector3(), camRay = new THREE.Raycaster(), camDir = new THREE.Vector3(), cartEye = new THREE.Vector3();
+const tmp = new THREE.Vector3(), camRay = new THREE.Raycaster(), camDir = new THREE.Vector3();
 function frame(){
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
@@ -3082,23 +3081,13 @@ function frame(){
   if (camera.position.y < minY) camera.position.y = minY;
   if (inside) { camera.lookAt(target); } else if (camBlockers.length) { camRay.set(target, camDir.subVectors(camera.position, target).normalize()); camRay.far = d;
     const hit = camRay.intersectObjects(camBlockers, true)[0]; if (hit) { d = Math.max(1.3, hit.distance - .35); setCam(d); } }
-  const hall = !inside && ROOFS.find(R0 => pp.x > R0.x0 && pp.x < R0.x1 && pp.z > R0.z0 && pp.z < R0.z1);
-  if (hall) { pitch = Math.min(pitch, .2); d = Math.min(d, 4.6);
-    const ok = () => camera.position.x > hall.x0 + .35 && camera.position.x < hall.x1 - .35 && camera.position.z > hall.z0 + .35 && camera.position.z < hall.z1 - .35 && camera.position.y < hall.y - .4;
-    // swing the camera toward the middle of the hall until it fits inside, so we look across the hall from within
-    const y0 = cam.yaw, yc = Math.atan2((hall.x0 + hall.x1)/2 - pp.x, (hall.z0 + hall.z1)/2 - pp.z); let dy = Math.atan2(Math.sin(yc - y0), Math.cos(yc - y0)), best = null;
-    cam.yaw = y0; setCam(d); if (ok()) best = y0; else { cam.yaw = yc; setCam(d); best = yc; }
-    cam.yaw = best === null ? y0 : y0 + Math.atan2(Math.sin(best - y0), Math.cos(best - y0)) * Math.min(1, dt*5); setCam(d);
-    let k = 0; while (!ok() && d > 1.6 && k++ < 30) { d *= .9; setCam(d); } }
-  const inCart = player.riding && !photo; pa.g.visible = !inCart && !(inside && player.sitting);
-  if (inCart) { cartEye.set(.5, 2.42, -1.15); cart.g.localToWorld(cartEye); camera.position.copy(cartEye);
-    const lp = clamp(cam.pitch - .2, -.35, .7); target.set(cartEye.x - Math.sin(cam.yaw)*Math.cos(lp)*5, cartEye.y - Math.sin(lp)*5, cartEye.z - Math.cos(cam.yaw)*Math.cos(lp)*5); }
-  else if (!inside) target.y += lookUp + .45;
+  pa.g.visible = !(inside && player.sitting);
+  if (!inside) target.y += lookUp + .45;
   camera.lookAt(target);
   if (photo) { photo.t += dt; const h = heightAt(photo.look.x, photo.look.z);
     camera.position.lerp(photoV.set(photo.camP.x, h + 1.7, photo.camP.z), Math.min(1, photo.t*2.5)); camera.lookAt(photo.look.x, h + 1.15, photo.look.z); }
   sky.position.copy(camera.position); updateMotes(t, pp);
-  { const f = (innerHeight > innerWidth ? 58 : 50) + (inside || player.riding ? 18 : 0); if (Math.abs(camera.fov - f) > .05) { camera.fov += (f - camera.fov) * Math.min(1, dt*4); camera.updateProjectionMatrix(); } }
+  { const f = (innerHeight > innerWidth ? 58 : 50) + (inside ? 18 : 0); if (Math.abs(camera.fov - f) > .05) { camera.fov += (f - camera.fov) * Math.min(1, dt*4); camera.updateProjectionMatrix(); } }
   if (player.label) player.label.visible = pa.g.visible && camera.position.distanceTo(pp) > 5.2;
   if (innerWidth !== lastW || innerHeight !== lastH) { lastW = innerWidth; lastH = innerHeight; renderer.setSize(innerWidth, innerHeight); fitCam(); }
   sun.position.set(pp.x + 55, 85, pp.z + 35); sun.target.position.set(pp.x, 0, pp.z);
