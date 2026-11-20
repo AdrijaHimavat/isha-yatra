@@ -3054,7 +3054,9 @@ function dsTick(){
     if (dsWatch) { const w0 = dsWant(now), w = w0 && w0.done ? null : w0, fr = $('#dsFrame');
       if (w && w.audio) { if (!fr.hidden && dsYT && dsYT.pauseVideo) dsYT.pauseVideo(); fr.hidden = true; dsCur = null; dsAudioOnly(w.audio); dsPlayAudio(w); dsMusicOff(); }
       else if (w) { dsAudioOnly(null); if (w.id !== dsCur) { dsLoad(w); if (dsCur && fr.hidden) toast(tr('Tap the video if it does not start')); } fr.hidden = false; }
-      else { if (!fr.hidden && dsYT && dsYT.pauseVideo) dsYT.pauseVideo(); dsAudioOnly(null); fr.hidden = true; dsCur = null; dsMusicBack(); } }
+      else { if (!fr.hidden && dsYT && dsYT.pauseVideo) dsYT.pauseVideo(); dsAudioOnly(null); fr.hidden = true; dsCur = null; } }
+    // Shambho stays quiet while you watch the screen or sit on a cushion facing Adiyogi
+    if (dsWatch || (player.sitting && adiSpots.includes(player.sitting))) dsMusicOff(); else dsMusicBack();
   }
   if (dsWatch) dsPlace();
   if (dsWatch || dsLabHid) { dsLabHid = dsWatch; // name tags of people right in front of the camera would cover the screen
