@@ -2929,16 +2929,16 @@ const syncSeg = () => { renderClothes(); renderAcc(); segSel('#genderSeg', (save
 syncSeg(); $('#nameIn').value = save.name || '';
 
 /* ---------- Darshan with Sadhguru: Fri 20 Nov 2026, 6:10 pm IST (12:40 UTC) ----------
-   6:10 opening song · 6:20 chant · 6:30-7:00 satsang video in the viewer's language.
+   6:10 opening song · 6:20 chant · 6:30 satsang video in the viewer's language (15-33 min, each to its end).
    Everyone sees the same moment: a late joiner starts the video at the right second.
    Test: add ?darshanTest=MIN to the URL to pretend the darshan started MIN minutes ago (e.g. -1, 0, 11, 21). */
 var DS_T0 = (() => { const q = new URLSearchParams(location.search).get('darshanTest'); return q !== null && q !== '' && !isNaN(+q) ? Date.now() - (+q)*60000 : Date.UTC(2026, 10, 20, 12, 40); })();
-var DS_END = DS_T0 + 50*60000;
+var DS_END = DS_T0 + 53*60000;   // the satsang runs to the end of each language's video (at most ~33 min)
 const DS_SEGS = [{k:'song', a:0, b:10, label:'Guru Paduka Stotram', by:'Sounds of Isha', audio:'/darshan/guru-paduka-stotram.m4a'},
-  {k:'mantra', a:10, b:20, label:'Brahmananda Swarupa', by:'Sounds of Isha', audio:'/darshan/brahmananda-swarupa.m4a'}, {k:'talk', a:20, b:50, label:'Satsang with Sadhguru'}];
+  {k:'mantra', a:10, b:20, label:'Brahmananda Swarupa', by:'Sounds of Isha', audio:'/darshan/brahmananda-swarupa.m4a'}, {k:'talk', a:20, b:53, label:'Satsang with Sadhguru'}];
 const dsAud = {}; DS_SEGS.forEach(sg => { if (sg.audio) { const a = new Audio(); a.preload = 'none'; a.loop = true; a.src = sg.audio; dsAud[sg.k] = a; } });
 // YouTube video ids (11 characters). talk: one per language; a language without its own video falls back to English.
-const DS_VIDEO = {"talk": {"en": ""}};
+const DS_VIDEO = {"talk": {"en": "wSMpQTiDQJE", "hi": "oqSTPtZMjEQ", "te": "yIwx6xgQBag", "kn": "47eTy3ZoKBQ", "ta": "dlY2_fQg-oM", "bn": "Np4utezLjp4", "mr": "Cc7V4fwaa_k", "ml": "JN6D6wEhp90", "gu": "MxJ0IA23NVo", "ne": "xur6-NixrFk", "or": "gVvmqhCC06I", "ar": "ePf4SiUMw7M", "bg": "hyYmqrX-Qkw", "hr": "90IP3OOi5uw", "cs": "GQ7GrdhbkbY", "fr": "Wjsk0zfn64s", "de": "JwC1W9AG4c4", "hu": "fqUYtcyyRkI", "id": "RrH6hsDMZrg", "it": "oCTT_SUEbgc", "ja": "yWmCO7QO7KQ", "ko": "myXacj-DFdU", "zh": "qCyOQhsEFnk", "fa": "dEpWVBokxRA", "pl": "S5lgVSrPJUY", "pt": "qcmy1HcY1JU", "ro": "4g_ZYQqQitU", "ru": "glqKDTwhRMI", "sr": "LZ382nYZPPg", "es": "SKIHp4CA9tk", "th": "ljlc2LPR3bs", "zh-Hant": "C9PBFDPfT1s", "tr": "Xbet2rKJzA4", "uk": "qRnF0WQ6e_w", "vi": "PP7XHprql_E"}, "dur": {"en": 1515, "hi": 1488, "te": 1515, "kn": 1102, "ta": 944, "bn": 902, "mr": 1515, "ml": 1951, "gu": 1515, "ne": 1500, "or": 942, "ar": 918, "bg": 955, "hr": 1043, "cs": 785, "fr": 919, "de": 1515, "hu": 1107, "id": 1951, "it": 974, "ja": 918, "ko": 901, "zh": 906, "fa": 918, "pl": 1080, "pt": 974, "ro": 1041, "ru": 955, "sr": 1192, "es": 978, "th": 1192, "zh-Hant": 1515, "tr": 918, "uk": 888, "vi": 1260}};
 const DS_LANGS = [['en','English'],['hi','हिन्दी'],['ta','தமிழ்'],['te','తెలుగు'],['kn','ಕನ್ನಡ'],['ml','മലയാളം'],['bn','বাংলা'],['mr','मराठी'],['gu','ગુજરાતી'],['or','ଓଡ଼ିଆ'],['as','অসমীয়া'],['ne','नेपाली'],
   ['ar','العربية'],['fa','فارسی'],['tr','Türkçe'],['ru','Русский'],['uk','Українська'],['pl','Polski'],['cs','Čeština'],['hu','Magyar'],['ro','Română'],['bg','Български'],['hr','Hrvatski'],['sr','Српски'],
   ['de','Deutsch'],['fr','Français'],['it','Italiano'],['es','Español'],['pt','Português'],['zh','中文（简体）'],['zh-Hant','中文（繁體）'],['ja','日本語'],['ko','한국어'],['th','ไทย'],['vi','Tiếng Việt'],['id','Bahasa Indonesia']];
@@ -2951,7 +2951,8 @@ const dsLangCode = () => { const l = save.dsLang || DS_MAP[lang] || lang; return
 function dsWant(now){ const sg = dsSeg(now); if (!sg) return null;
   const off = Math.max(0, (now - DS_T0)/1000 - sg.a*60);
   if (sg.audio) return {audio: dsAud[sg.k], sg, off};
-  const id = DS_VIDEO.talk[dsLangCode()]; if (!id) return null;
+  const lc = dsLangCode(), id = DS_VIDEO.talk[lc]; if (!id) return null;
+  if (off >= ((DS_VIDEO.dur || {})[lc] || 1800) + 1) return {done: true, sg};
   return {id, sg, off: Math.floor(off)}; }
 function dsAudioOnly(keep){ for (const k in dsAud) if (dsAud[k] !== keep && !dsAud[k].paused) dsAud[k].pause(); }
 function dsPlayAudio(w){ const a = w.audio, d = a.duration, want = d > 0 ? w.off % d : w.off;
@@ -2962,14 +2963,15 @@ function dsFmt(ms){ const t = Math.max(0, Math.ceil(ms/1000)), h = Math.floor(t/
 function dsLocal(){ let t; try { t = new Date(DS_T0).toLocaleString(lang, {timeZone:'Asia/Kolkata', weekday:'short', hour:'numeric', minute:'2-digit'}); } catch (_) { t = new Date(DS_T0 + 330*60000).toUTCString().slice(0, 22); } return t + ' IST'; }
 function dsDraw(now){
   const g = dsCan.getContext('2d'), W = 1024, H = 576, live = now >= DS_T0 && now < DS_END, sg = dsSeg(now);
-  const l2 = now < DS_T0 ? tr('Starts in {t}', {t: dsFmt(DS_T0 - now)}) : live ? '● ' + tr('Live now') : tr('The Darshan has ended. Thank you 🙏');
-  const l3 = now < DS_T0 ? dsLocal() : live ? (sg ? tr(sg.label) + (sg.by ? ' · ' + sg.by : '') : '') + (dsWant(now) ? '' : ' · ' + tr('Video coming soon')) : '';
+  const w = live ? dsWant(now) : null, on = live && !(w && w.done);
+  const l2 = now < DS_T0 ? tr('Starts in {t}', {t: dsFmt(DS_T0 - now)}) : on ? '● ' + tr('Live now') : tr('The Darshan has ended. Thank you 🙏');
+  const l3 = now < DS_T0 ? dsLocal() : on ? (sg ? tr(sg.label) + (sg.by ? ' · ' + sg.by : '') : '') + (w ? '' : ' · ' + tr('Video coming soon')) : '';
   const key = lang + '|' + l2 + '|' + l3; if (key === dsShown) return; dsShown = key;
   const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#3a2414'); gr.addColorStop(1, '#140c07'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   g.strokeStyle = 'rgba(246,198,106,.35)'; g.lineWidth = 4; g.strokeRect(22, 22, W - 44, H - 44);
   const f = getComputedStyle(document.body).fontFamily || 'sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillStyle = '#f6c66a'; g.font = '700 70px ' + f; g.fillText(tr('Darshan with Sadhguru'), W/2, 160, W - 100);
-  g.fillStyle = live ? '#ff6b5a' : '#fff3df'; g.font = '700 62px ' + f; g.fillText(l2, W/2, 300, W - 100);
+  g.fillStyle = on ? '#ff6b5a' : '#fff3df'; g.font = '700 62px ' + f; g.fillText(l2, W/2, 300, W - 100);
   g.fillStyle = '#ecd3ad'; g.font = '44px ' + f; g.fillText(l3, W/2, 390, W - 100);
   g.fillStyle = '#b89870'; g.font = '34px ' + f; g.fillText('🔱 ' + tr('In front of Adiyogi'), W/2, 490, W - 100);
   dsTex.needsUpdate = true;
@@ -2991,7 +2993,7 @@ function dsLoad(w){
       playerVars: {autoplay: 1, start: w.off, playsinline: 1, rel: 0, modestbranding: 1, iv_load_policy: 3},
       events: {
         onReady: e => { const n = dsWant(Date.now()); if (!dsWatch) return e.target.pauseVideo();
-          if (n && n.id !== w.id) { dsCur = n.id; e.target.loadVideoById({videoId: n.id, startSeconds: n.off}); } else e.target.playVideo(); },
+          if (n && n.id && n.id !== w.id) { dsCur = n.id; e.target.loadVideoById({videoId: n.id, startSeconds: n.off}); } else e.target.playVideo(); },
         onStateChange: e => {
           if (e.data === 1) { if (dsWatch) dsMusicOff(); else e.target.pauseVideo();
             if (!dsSynced) { dsSynced = true; const n = dsWant(Date.now()); if (n && n.id === dsCur && Math.abs(e.target.getCurrentTime() - n.off) > 8) e.target.seekTo(n.off, true); } }
@@ -3049,7 +3051,7 @@ function dsTick(){
     chip.hidden = !started || !soon || dsWatch;
     if (!chip.hidden) { const live = now >= DS_T0; chip.classList.toggle('live', live);
       chip.textContent = (live ? '🔴 ' : '🙏 ') + tr('Darshan with Sadhguru') + ' · ' + (live ? tr('Live now') : tr('Starts in {t}', {t: dsFmt(DS_T0 - now)})); }
-    if (dsWatch) { const w = dsWant(now), fr = $('#dsFrame');
+    if (dsWatch) { const w0 = dsWant(now), w = w0 && w0.done ? null : w0, fr = $('#dsFrame');
       if (w && w.audio) { if (!fr.hidden && dsYT && dsYT.pauseVideo) dsYT.pauseVideo(); fr.hidden = true; dsCur = null; dsAudioOnly(w.audio); dsPlayAudio(w); dsMusicOff(); }
       else if (w) { dsAudioOnly(null); if (w.id !== dsCur) { dsLoad(w); if (dsCur && fr.hidden) toast(tr('Tap the video if it does not start')); } fr.hidden = false; }
       else { if (!fr.hidden && dsYT && dsYT.pauseVideo) dsYT.pauseVideo(); dsAudioOnly(null); fr.hidden = true; dsCur = null; dsMusicBack(); } }
