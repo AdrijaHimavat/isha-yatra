@@ -47,6 +47,7 @@ th{color:var(--muted);font-weight:500;font-size:12px}
   <div id="out" hidden>
     <div class="card"><div class="kpis" id="kpis"></div></div>
     <div class="card"><h2>People per day</h2><svg id="chart" viewBox="0 0 600 180" width="100%" role="img" aria-label="People per day"></svg></div>
+    <div class="card"><h2>Who joined the screen in front of Adiyogi</h2><table id="evt"></table></div>
     <div class="card"><h2>Day by day</h2><table id="tbl"></table></div>
     <div class="two">
       <div class="card"><h2>Time zones</h2><div class="list" id="zones"></div></div>
@@ -97,6 +98,10 @@ async function load(){
   chart(daily);
   $('#tbl').innerHTML = '<tr><th>Day</th><th>People</th><th>New</th><th>Visits</th><th>Time played</th><th>Avg visit</th></tr>' +
     daily.slice().reverse().map(d => `<tr><td>${new Date(d.day + 'T12:00:00Z').toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'})}</td><td>${d.people}</td><td>${d.new}</td><td>${d.visits}</td><td>${fmtMin(d.minutes)}</td><td>${d.avg_min} min</td></tr>`).join('');
+  const EVN = {morning: 'Guru Pooja · 5:30 AM', darshan: 'Darshan with Sadhguru'}, evs = r.events || [];
+  $('#evt').innerHTML = evs.length ? '<tr><th>Day</th><th>Event</th><th>People</th><th>Avg stay</th><th>Time zones</th></tr>' +
+    evs.map(e => `<tr><td>${new Date(e.day + 'T12:00:00Z').toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'})}</td><td>${esc(EVN[e.event] || e.event)}</td><td>${e.people}</td><td>${e.avg_min} min</td><td>${e.zones}</td></tr>`).join('')
+    : '<tr><td class="sub">Nobody has joined yet. Each morning at 5:30 (in each player\'s own time) the count appears here.</td></tr>';
   list('#zones', r.zones || [], 'tz', 'people'); list('#langs', r.langs || [], 'lang', 'people'); list('#refs', r.refs || [], 'ref', 'visits');
   $('#when').textContent = 'Days are counted in ' + r.tz + ' · updated ' + new Date().toLocaleTimeString();
   $('#out').hidden = false;
