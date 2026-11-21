@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Isha Yatra · Stats</title>
+<style>
+:root{--bg:#1a120c;--card:#2a1d14;--line:rgba(255,232,200,.16);--text:#fff3e2;--muted:#c9b59b;--saff:#f2922e;--good:#9fd88a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;margin:0 0 4px}h1 span{color:var(--saff)}
+.sub{color:var(--muted);margin:0 0 18px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,select,button{font:inherit;color:var(--text);background:rgba(255,243,226,.06);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+button{background:var(--saff);color:#2a1505;border:0;font-weight:700;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kpi{background:rgba(255,243,226,.04);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi b{display:block;font-size:26px;font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:12px}
+.live b{color:var(--good)}
+h2{font-size:15px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+svg text{fill:var(--muted);font-size:13px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:12px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.bar{height:8px;border-radius:4px;background:var(--saff);opacity:.85}
+.list div{display:grid;grid-template-columns:1fr 60px;gap:8px;align-items:center;margin:6px 0;font-size:14px}
+.err{color:#ffb4a2}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>Isha <span>Yatra</span> · visitors</h1>
+  <p class="sub">Anonymous counts only: a random device id, language, time zone and minutes played. Test and preview visits are left out.</p>
+  <div class="card row" id="login">
+    <input id="pass" type="password" placeholder="Passcode" autocomplete="current-password" style="flex:1;min-width:180px">
+    <select id="days"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
+    <select id="tz"></select>
+    <button id="go">Show</button>
+    <span class="err" id="err"></span>
+  </div>
+  <div id="out" hidden>
+    <div class="card"><div class="kpis" id="kpis"></div></div>
+    <div class="card"><h2>People per day</h2><svg id="chart" viewBox="0 0 600 180" width="100%" role="img" aria-label="People per day"></svg></div>
+    <div class="card"><h2>Day by day</h2><table id="tbl"></table></div>
+    <div class="two">
+      <div class="card"><h2>Time zones</h2><div class="list" id="zones"></div></div>
+      <div class="card"><h2>Languages</h2><div class="list" id="langs"></div></div>
+    </div>
+    <div class="card"><h2>Where visits come from</h2><div class="list" id="refs"></div></div>
+    <p class="sub" id="when"></p>
+  </div>
+</main>
+<script>
+const SB = {url: 'https://lgiljuusghkwabibjldg.supabase.co', key: 'sb_publishable_TAgZmlQKceB6LPWX0gfonw_QladlGrV'};
+const $ = q => document.querySelector(q);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const myTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+['UTC', 'Asia/Kolkata', 'Asia/Tehran', 'Europe/London', 'America/New_York', myTz].filter((v, i, a) => a.indexOf(v) === i)
+  .forEach(z => $('#tz').insertAdjacentHTML('beforeend', `<option value="${z}">${z}</option>`));
+$('#tz').value = myTz;
+try { $('#pass').value = localStorage.getItem('iy-stats-pass') || ''; } catch (_) {}
+const fmtMin = m => m >= 60 ? (m/60).toFixed(1) + ' h' : Math.round(m) + ' min';
+function list(el, rows, label, val){
+  const max = Math.max(1, ...rows.map(r => r[val]));
+  $(el).innerHTML = rows.length ? rows.map(r => `<div><span>${esc(r[label])}<div class="bar" style="width:${(100*r[val]/max).toFixed(0)}%"></div></span><b style="text-align:right">${r[val]}</b></div>`).join('') : '<p class="sub">No data yet</p>';
+}
+function chart(daily){
+  const svg = $('#chart'), W = 600, H = 180, pad = 24, n = daily.length, max = Math.max(1, ...daily.map(d => d.people));
+  const bw = (W - pad*2)/n; let h = '';
+  daily.forEach((d, i) => { const bh = (H - 44)*d.people/max, x = pad + i*bw + bw*.15, y = H - 24 - bh;
+    h += `<rect x="${x}" y="${y}" width="${bw*.7}" height="${bh}" rx="3" fill="#f2922e"><title>${d.day}: ${d.people} people, ${d.visits} visits</title></rect>`;
+    if (d.people) h += `<text x="${x + bw*.35}" y="${y - 4}" text-anchor="middle">${d.people}</text>`;
+    if (n <= 16 || i % Math.ceil(n/12) === 0) h += `<text x="${x + bw*.35}" y="${H - 8}" text-anchor="middle">${d.day.slice(5)}</text>`; });
+  svg.innerHTML = h;
+}
+async function load(){
+  $('#err').textContent = ''; $('#go').disabled = true;
+  let r = null;
+  try { const res = await fetch(SB.url + '/rest/v1/rpc/stats_report', {method: 'POST', headers: {apikey: SB.key, 'Content-Type': 'application/json'},
+    body: JSON.stringify({p_pass: $('#pass').value, p_days: +$('#days').value, p_tz: $('#tz').value})}); r = res.ok ? await res.json() : null; } catch (_) {}
+  $('#go').disabled = false;
+  if (!r) return $('#err').textContent = 'Could not connect';
+  if (r.error) return $('#err').textContent = 'Wrong passcode';
+  try { localStorage.setItem('iy-stats-pass', $('#pass').value); } catch (_) {}
+  const daily = r.daily || [], today = daily[daily.length - 1] || {}, sum = k => daily.reduce((a, d) => a + (d[k] || 0), 0);
+  $('#kpis').innerHTML = [
+    ['live', r.live_now, 'playing right now'], ['', today.people || 0, 'people today'], ['', fmtMin(today.minutes || 0), 'played today'],
+    ['', (today.avg_min || 0) + ' min', 'average visit today'], ['', sum('people'), `people · last ${daily.length} days`], ['', fmtMin(sum('minutes')), `played · last ${daily.length} days`],
+    ['', r.total_people, 'people since the start'], ['', r.accounts, 'accounts']
+  ].map(([c, v, l]) => `<div class="kpi ${c}"><b>${v}</b><small>${l}</small></div>`).join('');
+  chart(daily);
+  $('#tbl').innerHTML = '<tr><th>Day</th><th>People</th><th>New</th><th>Visits</th><th>Time played</th><th>Avg visit</th></tr>' +
+    daily.slice().reverse().map(d => `<tr><td>${new Date(d.day + 'T12:00:00Z').toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'})}</td><td>${d.people}</td><td>${d.new}</td><td>${d.visits}</td><td>${fmtMin(d.minutes)}</td><td>${d.avg_min} min</td></tr>`).join('');
+  list('#zones', r.zones || [], 'tz', 'people'); list('#langs', r.langs || [], 'lang', 'people'); list('#refs', r.refs || [], 'ref', 'visits');
+  $('#when').textContent = 'Days are counted in ' + r.tz + ' · updated ' + new Date().toLocaleTimeString();
+  $('#out').hidden = false;
+}
+$('#go').addEventListener('click', load);
+$('#pass').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+if ($('#pass').value) load();
+setInterval(() => { if (!$('#out').hidden) load(); }, 60000);
+</script>
+</body>
+</html>
