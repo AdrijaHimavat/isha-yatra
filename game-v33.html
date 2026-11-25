@@ -389,6 +389,11 @@ body.vy #tabs{display:none!important}
 .vy-flash{position:fixed;inset:0;z-index:47;background:#fff;pointer-events:none;animation:vyFl .5s ease-out forwards}
 @keyframes vyFl{from{opacity:.9}to{opacity:0}}
 @media (max-width:600px){#vyHud{top:calc(env(safe-area-inset-top,0px) + 142px);min-width:190px;font-size:12px}}
+#vyIntro{position:fixed;inset:0;z-index:43;display:grid;place-items:center;background:rgba(20,12,6,.6);padding:16px}
+#vyIntro[hidden]{display:none}
+#vyIntro .dn-card{max-height:min(90vh,680px);overflow:auto}
+#vyIntro .vy-how{margin:6px 0;padding-inline-start:4px;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13.5px;line-height:1.4}
+#vyIntro .primary{margin-top:6px;width:100%;position:sticky;bottom:0;box-shadow:0 -8px 18px rgba(30,18,8,.55)}
 </style>
 
 <div id="app"></div>
@@ -4514,44 +4519,125 @@ window.__r2 = {NAGA, KBH, PRICE, owns, dressRender};
 }
 
 /* ---------- v33: Velliangiri Yatra (adventure) + coin economy ---------- */
-(() => { const T = {"fa": {
-"Velliangiri Hills": "کوه‌های ولیانگیری", "The seven hills. Carry water and food, keep the mountain clean.": "هفت تپه. آب و غذا همراه داشته باش و کوه را تمیز نگه دار.",
+(() => { const T = {
+"fa": {
+"Velliangiri Hills": "کوه‌های ولیانگیری",
+"The seven hills. Carry water and food, keep the mountain clean.": "هفت تپه. آب و غذا همراه داشته باش و کوه را تمیز نگه دار.",
 "The plants are growing 🌱 Come back in {n} s": "گیاه‌ها در حال رشدند 🌱 {n} ثانیه‌ی دیگر برگرد",
-"Harvest time! · +6 coins": "وقت برداشت! · ۶+ سکه", "You tilled the soil · +2 coins": "خاک را شخم زدی · ۲+ سکه", "You watered the plants · +2 coins": "به گیاه‌ها آب دادی · ۲+ سکه",
-"New badge: {b}": "نشان جدید: {b}", "Summit": "قله", "Brave pilgrim": "زائر شجاع", "Clean Velliangiri": "ولیانگیری پاک", "Generous heart": "قلب بخشنده",
-"Water bottle": "بطری آب", "Food packet": "بسته‌ی غذا", "Bananas": "موز", "Walking stick": "عصای کوه", "Head torch": "چراغ پیشانی", "Bigger backpack": "کوله‌ی بزرگ‌تر",
-"Hill {n}/7": "تپه‌ی {n} از ۷", "Hill {n} of 7": "تپه‌ی {n} از ۷", "Backpack": "کوله‌پشتی", "Tap an item to eat or drink it.": "روی هر چیز بزن تا بخوری یا بنوشی.", "Gear": "تجهیزات", "Badges": "نشان‌ها",
-"None yet. Reach the summit, keep the mountain clean, be brave!": "هنوز نداری. به قله برس، کوه را تمیز نگه دار، شجاع باش!", "Close": "بستن",
-"Ahh, fresh water": "آخیش، آب خنک", "Tasty! Energy back": "خوشمزه! انرژی برگشت", "Your backpack is full 🎒": "کوله‌پشتی‌ات پر است 🎒",
-"Base camp shop": "فروشگاه کمپ پایه", "Walking stick: you get hungry and thirsty more slowly. Head torch: walk safely at night. Bigger backpack: 9 slots.": "عصا: دیرتر گرسنه و تشنه می‌شوی. چراغ پیشانی: شب با خیال راحت راه برو. کوله‌ی بزرگ‌تر: ۹ جا.",
+"Harvest time! · +6 coins": "وقت برداشت! · ۶+ سکه",
+"You tilled the soil · +2 coins": "خاک را شخم زدی · ۲+ سکه",
+"You watered the plants · +2 coins": "به گیاه‌ها آب دادی · ۲+ سکه",
+"New badge: {b}": "نشان جدید: {b}",
+"Summit": "قله",
+"Brave pilgrim": "زائر شجاع",
+"Clean Velliangiri": "ولیانگیری پاک",
+"Generous heart": "قلب بخشنده",
+"Water bottle": "بطری آب",
+"Food packet": "بسته‌ی غذا",
+"Bananas": "موز",
+"Walking stick": "عصای کوه",
+"Head torch": "چراغ پیشانی",
+"Bigger backpack": "کوله‌ی بزرگ‌تر",
+"Hill {n}/7": "تپه‌ی {n} از ۷",
+"Hill {n} of 7": "تپه‌ی {n} از ۷",
+"Backpack": "کوله‌پشتی",
+"Tap an item to eat or drink it.": "روی هر چیز بزن تا بخوری یا بنوشی.",
+"Gear": "تجهیزات",
+"Badges": "نشان‌ها",
+"None yet. Reach the summit, keep the mountain clean, be brave!": "هنوز نداری. به قله برس، کوه را تمیز نگه دار، شجاع باش!",
+"Close": "بستن",
+"Ahh, fresh water": "آخیش، آب خنک",
+"Tasty! Energy back": "خوشمزه! انرژی برگشت",
+"Your backpack is full 🎒": "کوله‌پشتی‌ات پر است 🎒",
+"Base camp shop": "فروشگاه کمپ پایه",
+"Walking stick: you get hungry and thirsty more slowly. Head torch: walk safely at night. Bigger backpack: 9 slots.": "عصا: دیرتر گرسنه و تشنه می‌شوی. چراغ پیشانی: شب با خیال راحت راه برو. کوله‌ی بزرگ‌تر: ۹ جا.",
 "A volunteer gives you a starter kit: 2 water bottles and 2 food packets 🎒": "یک داوطلب بسته‌ی شروع به تو می‌دهد: ۲ بطری آب و ۲ بسته غذا 🎒",
 "The bus ticket is 10 coins. Work on the Save Soil farm to earn some 🌱": "بلیت اتوبوس ۱۰ سکه است. در مزرعه‌ی نجات خاک کار کن تا سکه جمع کنی 🌱",
-"🚌 Off to the Velliangiri foothills!": "🚌 به سوی دامنه‌ی ولیانگیری!", "Welcome back from the seventh hill 🙏 +{n} coins": "از تپه‌ی هفتم خوش برگشتی 🙏 {n}+ سکه",
+"🚌 Off to the Velliangiri foothills!": "🚌 به سوی دامنه‌ی ولیانگیری!",
+"Welcome back from the seventh hill 🙏 +{n} coins": "از تپه‌ی هفتم خوش برگشتی 🙏 {n}+ سکه",
 "Back at the ashram. Your progress is saved at hill {h} · +{n} coins": "به آشرام برگشتی. پیشرفتت در تپه‌ی {h} ذخیره شد · {n}+ سکه",
-"Annadanam needs 20 coins": "آناداانام ۲۰ سکه لازم دارد", "🍛 Your offering feeds pilgrims today. Thank you!": "🍛 هدیه‌ی تو امروز زائران را سیر می‌کند. ممنون!",
+"Annadanam needs 20 coins": "آناداانام ۲۰ سکه لازم دارد",
+"🍛 Your offering feeds pilgrims today. Thank you!": "🍛 هدیه‌ی تو امروز زائران را سیر می‌کند. ممنون!",
 "You rest in the shade. Food and water stay steady while you sit 🙏": "در سایه استراحت می‌کنی. تا نشسته‌ای غذا و آبت کم نمی‌شود 🙏",
-"Pick up trash on the trail, then bring it here": "زباله‌های مسیر را جمع کن و این‌جا بیاور", "Thank you for keeping the mountain clean! +{c} coins": "ممنون که کوه را تمیز نگه می‌داری! {c}+ سکه",
-"Cool spring water": "آب خنک چشمه", "Bottle filled": "بطری پر شد", "No more ripe bananas on this tree": "موز رسیده‌ی دیگری روی این درخت نیست", "You eat them right away": "همان‌جا می‌خوری‌شان", "Bananas in your backpack": "موز در کوله‌ات",
-"What a view! +5 coins": "چه منظره‌ای! ۵+ سکه", "It is not night yet. Keep walking while there is light ☀️": "هنوز شب نشده. تا هوا روشن است راه برو ☀️", "Sleeping under the stars…": "خواب زیر ستاره‌ها…",
-"Good morning! The sun will rise soon 🌄": "صبح بخیر! به‌زودی خورشید طلوع می‌کند 🌄", "You have already sat at the summit this trip 🙏": "در این سفر روی قله نشسته‌ای 🙏", "Sit in silence for 30 seconds 🙏": "۳۰ ثانیه در سکوت بنشین 🙏",
-"🚌 Velliangiri Yatra · 10 🪙": "🚌 یاترای ولیانگیری · ۱۰ 🪙", "Bus stop": "ایستگاه اتوبوس", "A bus to the foothills of the Velliangiri mountains: walk the seven hills, carry water and food, keep the mountain clean.": "اتوبوس به دامنه‌ی کوه‌های ولیانگیری: هفت تپه را پیاده برو، آب و غذا همراه داشته باش، کوه را تمیز نگه دار.",
-"🚌 Continue from hill {n} · 10 🪙": "🚌 ادامه از تپه‌ی {n} · ۱۰ 🪙", "🍛 Annadanam · 20 🪙": "🍛 آناداانام · ۲۰ 🪙", "Base camp": "کمپ پایه", "Buy water and food, then start the climb. Keep the mountain clean!": "آب و غذا بخر و صعود را شروع کن. کوه را تمیز نگه دار!",
-"🛒 Shop": "🛒 فروشگاه", "🚌 Back to Isha": "🚌 بازگشت به ایشا", "🚙 Jeep to hill {n}": "🚙 جیپ تا تپه‌ی {n}", "Camp · Rest house": "کمپ · استراحتگاه", "Rest house": "استراحتگاه",
+"Pick up trash on the trail, then bring it here": "زباله‌های مسیر را جمع کن و این‌جا بیاور",
+"Thank you for keeping the mountain clean! +{c} coins": "ممنون که کوه را تمیز نگه می‌داری! {c}+ سکه",
+"Cool spring water": "آب خنک چشمه",
+"Bottle filled": "بطری پر شد",
+"No more ripe bananas on this tree": "موز رسیده‌ی دیگری روی این درخت نیست",
+"You eat them right away": "همان‌جا می‌خوری‌شان",
+"Bananas in your backpack": "موز در کوله‌ات",
+"What a view! +5 coins": "چه منظره‌ای! ۵+ سکه",
+"It is not night yet. Keep walking while there is light ☀️": "هنوز شب نشده. تا هوا روشن است راه برو ☀️",
+"Sleeping under the stars…": "خواب زیر ستاره‌ها…",
+"Good morning! The sun will rise soon 🌄": "صبح بخیر! به‌زودی خورشید طلوع می‌کند 🌄",
+"You have already sat at the summit this trip 🙏": "در این سفر روی قله نشسته‌ای 🙏",
+"Sit in silence for 30 seconds 🙏": "۳۰ ثانیه در سکوت بنشین 🙏",
+"🚌 Velliangiri Yatra · 10 🪙": "🚌 یاترای ولیانگیری · ۱۰ 🪙",
+"Bus stop": "ایستگاه اتوبوس",
+"A bus to the foothills of the Velliangiri mountains: walk the seven hills, carry water and food, keep the mountain clean.": "اتوبوس به دامنه‌ی کوه‌های ولیانگیری: هفت تپه را پیاده برو، آب و غذا همراه داشته باش، کوه را تمیز نگه دار.",
+"🚌 Continue from hill {n} · 10 🪙": "🚌 ادامه از تپه‌ی {n} · ۱۰ 🪙",
+"🍛 Annadanam · 20 🪙": "🍛 آناداانام · ۲۰ 🪙",
+"Base camp": "کمپ پایه",
+"Buy water and food, then start the climb. Keep the mountain clean!": "آب و غذا بخر و صعود را شروع کن. کوه را تمیز نگه دار!",
+"🛒 Shop": "🛒 فروشگاه",
+"🚌 Back to Isha": "🚌 بازگشت به ایشا",
+"🚙 Jeep to hill {n}": "🚙 جیپ تا تپه‌ی {n}",
+"Camp · Rest house": "کمپ · استراحتگاه",
+"Rest house": "استراحتگاه",
 "Rest, buy water, hand in the trash you collected. Progress saved here.": "استراحت کن، آب بخر، زباله‌هایی که جمع کردی را تحویل بده. پیشرفتت این‌جا ذخیره می‌شود.",
-"🧘 Sit & rest": "🧘 نشستن و استراحت", "💧 Buy water · 6 🪙": "💧 خرید آب · ۶ 🪙", "🗑️ Hand in trash ({n})": "🗑️ تحویل زباله ({n})", "Camp": "کمپ",
-"Night has fallen. Pitch your tent and sleep until dawn.": "شب شده. چادرت را بزن و تا سپیده بخواب.", "A meadow for the night. Rest here when it gets dark.": "یک چمنزار برای شب. وقتی هوا تاریک شد این‌جا بمان.",
-"⛺ Pitch your tent & sleep": "⛺ چادر بزن و بخواب", "Mountain spring": "چشمه‌ی کوه", "Clear water from the rocks": "آب زلال از دل سنگ‌ها", "💧 Drink": "💧 نوشیدن", "🍶 Fill a bottle": "🍶 پر کردن بطری",
-"Wild banana plant": "درخت موز وحشی", "Ripe bananas: food for the climb": "موز رسیده: غذا برای صعود", "🍌 Pick bananas": "🍌 چیدن موز", "View point": "چشم‌انداز", "The valley and the hills below": "دره و تپه‌های پایین", "📸 Take a photo": "📸 عکس گرفتن",
-"The seventh hill": "تپه‌ی هفتم", "The summit. Sit in silence by the shrine at sunrise.": "قله. هنگام طلوع کنار معبد در سکوت بنشین.", "🙏 Sit in silence": "🙏 نشستن در سکوت",
-"A tiger on the trail! Stay calm and scare it away 🔥": "ببر روی مسیر! آرام باش و فراری‌اش بده 🔥", "Raise the torch & clap!": "مشعل را بالا ببر و دست بزن!", "Tap when the ring meets the circle": "وقتی حلقه به دایره رسید بزن",
-"The tiger turns away into the forest. Brave pilgrim! +25 coins 🐯": "ببر به جنگل برمی‌گردد. زائر شجاع! ۲۵+ سکه 🐯", "You step back and the tiger takes some food, then leaves. Stay calm next time 🐯": "عقب رفتی و ببر کمی غذا برداشت و رفت. دفعه‌ی بعد آرام‌تر باش 🐯",
-"A monkey is eyeing your backpack! Tap \"Shoo!\"": "یک میمون چشمش به کوله‌ی توست! «کیش!» را بزن", "Shoo! The monkey runs off": "کیش! میمون فرار کرد", "The monkey grabbed your {i} and ran!": "میمون {i} تو را برداشت و فرار کرد!",
-"🐒 Shoo!": "🐒 کیش!", "Monkey!": "میمون!", "Quick, before it grabs your food": "زود باش، قبل از این‌که غذایت را بردارد",
+"🧘 Sit & rest": "🧘 نشستن و استراحت",
+"💧 Buy water · 6 🪙": "💧 خرید آب · ۶ 🪙",
+"🗑️ Hand in trash ({n})": "🗑️ تحویل زباله ({n})",
+"Camp": "کمپ",
+"Night has fallen. Pitch your tent and sleep until dawn.": "شب شده. چادرت را بزن و تا سپیده بخواب.",
+"A meadow for the night. Rest here when it gets dark.": "یک چمنزار برای شب. وقتی هوا تاریک شد این‌جا بمان.",
+"⛺ Pitch your tent & sleep": "⛺ چادر بزن و بخواب",
+"Mountain spring": "چشمه‌ی کوه",
+"Clear water from the rocks": "آب زلال از دل سنگ‌ها",
+"💧 Drink": "💧 نوشیدن",
+"🍶 Fill a bottle": "🍶 پر کردن بطری",
+"Wild banana plant": "درخت موز وحشی",
+"Ripe bananas: food for the climb": "موز رسیده: غذا برای صعود",
+"🍌 Pick bananas": "🍌 چیدن موز",
+"View point": "چشم‌انداز",
+"The valley and the hills below": "دره و تپه‌های پایین",
+"📸 Take a photo": "📸 عکس گرفتن",
+"The seventh hill": "تپه‌ی هفتم",
+"The summit. Sit in silence by the shrine at sunrise.": "قله. هنگام طلوع کنار معبد در سکوت بنشین.",
+"🙏 Sit in silence": "🙏 نشستن در سکوت",
+"A tiger on the trail! Stay calm and scare it away 🔥": "ببر روی مسیر! آرام باش و فراری‌اش بده 🔥",
+"Raise the torch & clap!": "مشعل را بالا ببر و دست بزن!",
+"Tap when the ring meets the circle": "وقتی حلقه به دایره رسید بزن",
+"The tiger turns away into the forest. Brave pilgrim! +25 coins 🐯": "ببر به جنگل برمی‌گردد. زائر شجاع! ۲۵+ سکه 🐯",
+"You step back and the tiger takes some food, then leaves. Stay calm next time 🐯": "عقب رفتی و ببر کمی غذا برداشت و رفت. دفعه‌ی بعد آرام‌تر باش 🐯",
+"A monkey is eyeing your backpack! Tap \"Shoo!\"": "یک میمون چشمش به کوله‌ی توست! «کیش!» را بزن",
+"Shoo! The monkey runs off": "کیش! میمون فرار کرد",
+"The monkey grabbed your {i} and ran!": "میمون {i} تو را برداشت و فرار کرد!",
+"🐒 Shoo!": "🐒 کیش!",
+"Monkey!": "میمون!",
+"Quick, before it grabs your food": "زود باش، قبل از این‌که غذایت را بردارد",
 "You fainted… Volunteers carried you to safety and gave you food and water. Half of this trip’s coins were lost 🙏": "از حال رفتی… داوطلب‌ها تو را به جای امن بردند و آب و غذا دادند. نصف سکه‌های این سفر از دست رفت 🙏",
-"Progress saved": "پیشرفت ذخیره شد", "You feel weak! Eat or drink something now 🎒": "ضعف داری! همین حالا چیزی بخور یا بنوش 🎒", "Trash picked up! Hand it in at a rest house for coins": "زباله جمع شد! در استراحتگاه تحویل بده و سکه بگیر",
-"🙏 You sat in silence on the seventh hill. +80 coins": "🙏 روی تپه‌ی هفتم در سکوت نشستی. ۸۰+ سکه"
-}}
-; for (const l in T) { I18N[l] = I18N[l] || {}; Object.assign(I18N[l], T[l]); } })();
+"Progress saved": "پیشرفت ذخیره شد",
+"You feel weak! Eat or drink something now 🎒": "ضعف داری! همین حالا چیزی بخور یا بنوش 🎒",
+"Trash picked up! Hand it in at a rest house for coins": "زباله جمع شد! در استراحتگاه تحویل بده و سکه بگیر",
+"🙏 You sat in silence on the seventh hill. +80 coins": "🙏 روی تپه‌ی هفتم در سکوت نشستی. ۸۰+ سکه",
+"🚌 Velliangiri Yatra · free": "🚌 یاترای ولیانگیری · رایگان",
+"🚌 Continue from hill {n}": "🚌 ادامه از تپه‌ی {n}",
+"ℹ️ What is this?": "ℹ️ این چیه؟",
+"How it works": "چطور کار می‌کند",
+"Velliangiri Yatra": "یاترای ولیانگیری",
+"Let’s go!": "بزن بریم!",
+"A walking pilgrimage up the seven hills of the Velliangiri mountains, near the Isha Yoga Center. Take the bus to the foothills and climb to the seventh hill.": "یک زیارت پیاده از هفت تپه‌ی کوه‌های ولیانگیری، نزدیک مرکز یوگای ایشا. با اتوبوس تا دامنه برو و تا تپه‌ی هفتم بالا برو.",
+"Your backpack carries water and food. Watch the 🍎 and 💧 bars: if one runs out, you faint.": "کوله‌پشتی‌ات آب و غذا دارد. حواست به نوار 🍎 و 💧 باشد: اگر یکی تمام شود، از حال می‌روی.",
+"Find wild bananas and mountain springs on the way. Buy more at the base camp shop.": "در راه موز وحشی و چشمه پیدا کن. از فروشگاه کمپ پایه هم می‌توانی بخری.",
+"Collect coins and pick up trash: hand the trash in at a rest house for coins.": "سکه جمع کن و زباله‌ها را بردار: زباله را در استراحتگاه تحویل بده و سکه بگیر.",
+"Night falls at the camp on hill 4: pitch your tent and sleep until dawn.": "در کمپ تپه‌ی ۴ شب می‌شود: چادرت را بزن و تا سپیده بخواب.",
+"If a tiger blocks the path, stay calm: raise your torch and clap at the right moment to send it away.": "اگر ببر سر راهت آمد، آرام باش: مشعل را بالا ببر و درست به‌موقع دست بزن تا برود.",
+"At the top, sit in silence by the shrine at sunrise.": "بالای کوه، هنگام طلوع کنار معبد در سکوت بنشین.",
+"Progress is saved at every rest house. About 10 minutes to the top.": "پیشرفتت در هر استراحتگاه ذخیره می‌شود. حدود ۱۰ دقیقه تا قله.",
+"Spend your coins on clothes, garlands and the divine look at the Vastra stall.": "سکه‌هایت را در غرفه‌ی وسترا برای لباس، گردنبند گل و ظاهر خدایی خرج کن."
+}
+}; for (const l in T) { I18N[l] = I18N[l] || {}; Object.assign(I18N[l], T[l]); } })();
 // grandfather what people wear now, before the new locks
 if (!save.grand2) { const o = Array.isArray(save.owned) ? save.owned.slice() : [];
   if (PRICE.cloth[save.cloth] && !o.includes('cloth' + save.cloth)) o.push('cloth' + save.cloth);
@@ -4780,10 +4866,10 @@ function packRender(){
     <p class="fine">${tr('Tap an item to eat or drink it.')} · ${VYS.items.length}/${cap()}</p>
     <h3>${tr('Gear')}</h3><div class="vp-items">${Object.keys(GEAR).map(k => `<span class="vp-gear${VYS.gear[k] ? ' on' : ''}">${GEAR[k][0]} ${tr(GEAR[k][1])}${VYS.gear[k] ? ' ✓' : ''}</span>`).join('')}</div>
     <h3>${tr('Badges')}</h3><div class="vp-items">${VYS.badges.length ? VYS.badges.map(b => `<span class="vp-gear on">${BADGE[b][0]} ${tr(BADGE[b][1])}</span>`).join('') : `<span class="fine">${tr('None yet. Reach the summit, keep the mountain clean, be brave!')}</span>`}</div>
-    <button type="button" class="linkbtn" data-close="1">${tr('Close')}</button></div>`;
+    <button type="button" class="linkbtn" data-close="1">${tr('Close')}</button> <button type="button" class="linkbtn" data-intro="1">ℹ️ ${tr('How it works')}</button></div>`;
 }
 $('#vyPackBtn').addEventListener('click', e => { e.stopPropagation(); packRender(); pack.hidden = false; });
-pack.addEventListener('click', e => { if (e.target === pack || e.target.dataset.close) { pack.hidden = true; return; }
+pack.addEventListener('click', e => { if (e.target.dataset.intro) { pack.hidden = true; return introShow(null); } if (e.target === pack || e.target.dataset.close) { pack.hidden = true; return; }
   const b = e.target.closest('[data-use]'); if (b) { use(b.dataset.use); packRender(); } });
 function use(k){ const i = VYS.items.indexOf(k); if (i < 0) return; VYS.items.splice(i, 1); const it = ITEM[k];
   VYS.food = Math.min(100, VYS.food + it.food); VYS.water = Math.min(100, VYS.water + it.water); persist(); hudRender(); Sound.pop();
@@ -4806,6 +4892,26 @@ shopBox.addEventListener('click', e => { if (e.target === shopBox || e.target.da
   else { const k = b.dataset.gear; if (!VYS.gear[k] && pay(GEAR[k][2])) { VYS.gear[k] = 1; persist(); toast(GEAR[k][0] + ' ' + tr(GEAR[k][1]) + ' ✓'); hudRender(); } }
   shopRender(); });
 
+/* ---------- intro card ---------- */
+const intro = document.createElement('div'); intro.id = 'vyIntro'; intro.hidden = true; document.body.appendChild(intro);
+function introShow(then){
+  intro.innerHTML = `<div class="dn-card"><h2>⛰️ ${tr('Velliangiri Yatra')}</h2>
+    <p>${tr('A walking pilgrimage up the seven hills of the Velliangiri mountains, near the Isha Yoga Center. Take the bus to the foothills and climb to the seventh hill.')}</p>
+    <ul class="vy-how">
+      <li>🎒 ${tr('Your backpack carries water and food. Watch the 🍎 and 💧 bars: if one runs out, you faint.')}</li>
+      <li>🍌 ${tr('Find wild bananas and mountain springs on the way. Buy more at the base camp shop.')}</li>
+      <li>🪙 ${tr('Collect coins and pick up trash: hand the trash in at a rest house for coins.')}</li>
+      <li>⛺ ${tr('Night falls at the camp on hill 4: pitch your tent and sleep until dawn.')}</li>
+      <li>🐯 ${tr('If a tiger blocks the path, stay calm: raise your torch and clap at the right moment to send it away.')}</li>
+      <li>🙏 ${tr('At the top, sit in silence by the shrine at sunrise.')}</li>
+      <li>💾 ${tr('Progress is saved at every rest house. About 10 minutes to the top.')}</li>
+    </ul>
+    <p class="fine">${tr('Spend your coins on clothes, garlands and the divine look at the Vastra stall.')}</p>
+    <button type="button" class="primary" id="vyIntroGo">${then ? '🚌 ' + tr('Let’s go!') : tr('Close')}</button></div>`;
+  intro.hidden = false; intro._then = then; }
+intro.addEventListener('click', e => { if (e.target === intro || e.target.id === 'vyIntroGo') { intro.hidden = true; const f = intro._then; intro._then = null; if (f && e.target.id === 'vyIntroGo') f(); } });
+ACTIONS.vyIntro = () => introShow(null);
+
 /* ---------- travel: bus there and back ---------- */
 let lastHill = -1;
 function goMountain(resume){
@@ -4817,9 +4923,8 @@ function goMountain(resume){
     if (!VYS.starter) { VYS.starter = true; VYS.items.push('water', 'water', 'food', 'food'); persist(); setTimeout(() => toast(tr('A volunteer gives you a starter kit: 2 water bottles and 2 food packets 🎒')), 900); }
   });
 }
-ACTIONS.vyBus = () => {
-  if ((save.coins || 0) < 10) return toast(tr('The bus ticket is 10 coins. Work on the Save Soil farm to earn some 🌱'));
-  save.coins -= 10; persist(); Sound.coin(); toast(tr('🚌 Off to the Velliangiri foothills!'));
+ACTIONS.vyBus = () => { if (!VYS.introSeen) { VYS.introSeen = 1; persist(); return introShow(() => ACTIONS.vyBus()); }
+  toast(tr('🚌 Off to the Velliangiri foothills!')); Sound.bell(660, .1);
   if (VYS.summit || !VYS.hill) newTrip(); goMountain(false);
 };
 function newTrip(){ Object.assign(VYS, {hill: 0, food: Math.max(VYS.food, 80), water: Math.max(VYS.water, 80), trash: 0, trip: 0, slept: false, taken: [], tiger: false, monkey: false, photos: [], summit: false, picks: {}}); VYS.tripN++; PICK.forEach(p => p.m.visible = true); persist(); }
@@ -4864,8 +4969,8 @@ window.__vyUI = (z, primary, sec, name, info) => {
   const pp = player.a.g.position;
   if (!vyOn()) {
     if (Math.hypot(pp.x - BUSSTOP.x, pp.z - BUSSTOP.z) < 4.5 && !player.riding) {
-      const o = {primary: B_('🚌 Velliangiri Yatra · 10 🪙', 'vyBus'), sec: [], name: tr('Bus stop'), info: tr('A bus to the foothills of the Velliangiri mountains: walk the seven hills, carry water and food, keep the mountain clean.')};
-      if (VYS.hill > 0 && !VYS.summit) o.sec.push(B_('🚌 Continue from hill {n} · 10 🪙', 'vyBusResume', {n: VYS.hill + 1}));
+      const o = {primary: B_('🚌 Velliangiri Yatra · free', 'vyBus'), sec: [], name: tr('Bus stop'), info: tr('A bus to the foothills of the Velliangiri mountains: walk the seven hills, carry water and food, keep the mountain clean.')};
+      if (VYS.hill > 0 && !VYS.summit) o.sec.push(B_('🚌 Continue from hill {n}', 'vyBusResume', {n: VYS.hill + 1})); o.sec.push(B_('ℹ️ What is this?', 'vyIntro'));
       return o; }
     if (z === 'bhiksha' && !player.sitting) return {primary, sec: sec.concat([B_('🍛 Annadanam · 20 🪙', 'vyAnna')]), name, info};
     return null; }
@@ -4874,7 +4979,7 @@ window.__vyUI = (z, primary, sec, name, info) => {
   const n = near;
   if (!n) return o;
   if (n.type === 'base') { o.name = tr('Base camp'); o.info = tr('Buy water and food, then start the climb. Keep the mountain clean!');
-    o.primary = B_('🛒 Shop', 'vyShop'); o.sec = [B_('🚌 Back to Isha', 'vyHome')]; if (VYS.hill > 0 && !VYS.summit) o.sec.unshift(B_('🚙 Jeep to hill {n}', 'vyContinue', {n: VYS.hill + 1})); }
+    o.primary = B_('🛒 Shop', 'vyShop'); o.sec = [B_('ℹ️ What is this?', 'vyIntro'), B_('🚌 Back to Isha', 'vyHome')]; if (VYS.hill > 0 && !VYS.summit) o.sec.unshift(B_('🚙 Jeep to hill {n}', 'vyContinue', {n: VYS.hill + 1})); }
   if (n.type === 'rest') { o.name = n.ref.k === VY.CAMP ? tr('Camp · Rest house') : tr('Rest house'); o.info = tr('Rest, buy water, hand in the trash you collected. Progress saved here.');
     o.primary = B_('🧘 Sit & rest', 'vyRest'); o.sec = [B_('💧 Buy water · 6 🪙', 'vyBuyWater'), B_('🗑️ Hand in trash ({n})', 'vyBin', {n: VYS.trash}), B_('🚌 Back to Isha', 'vyHome')]; }
   if (n.type === 'camp') { o.name = tr('Camp'); o.info = dark() ? tr('Night has fallen. Pitch your tent and sleep until dawn.') : tr('A meadow for the night. Rest here when it gets dark.');
@@ -4886,7 +4991,7 @@ window.__vyUI = (z, primary, sec, name, info) => {
     o.primary = med ? B_('Stand up', 'stand') : B_('🙏 Sit in silence', 'vyMeditate'); o.sec = VYS.summit ? [B_('🚌 Back to Isha', 'vyHome')] : []; }
   return o;
 };
-ACTIONS.vyBusResume = () => { if ((save.coins || 0) < 10) return toast(tr('The bus ticket is 10 coins. Work on the Save Soil farm to earn some 🌱')); save.coins -= 10; persist(); Sound.coin(); goMountain(true); };
+ACTIONS.vyBusResume = () => goMountain(true);
 
 /* ---------- tiger: scare it away (it is never hurt) ---------- */
 const TIG = (() => { const g = new THREE.Group(); g.visible = false; scene.add(g); const fur = M(0xe0862c), blk = M(0x1a120c), wht = M(0xf4efe6);
