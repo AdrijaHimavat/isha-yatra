@@ -703,6 +703,7 @@ body.sa #tlStack,body.sa #mswChip,body.sa #tabs{display:none!important}
 #tohPan .toh-mine{background:rgba(253,246,233,.08);border-radius:14px;padding:10px 12px;margin:8px 0}
 #tohPan .toh-mine p{margin:0 0 4px;font-size:15px}
 #tohPan .toh-mine small{color:rgba(253,246,233,.6);font-size:12px}
+#tabs button.toh-new::after{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#7fcf7a;margin-inline-start:6px;vertical-align:middle;box-shadow:0 0 0 2px rgba(127,207,122,.35),0 0 8px #7fcf7a}
 </style>
 
 <div id="app"></div>
@@ -6516,7 +6517,8 @@ window.__sa = {enter, leave, build, buildDecor, openPanel, shelf, silenceStart, 
 "🌿 Leave a message": "🌿 گذاشتن پیام",
 "🌳 My leaves": "🌳 برگ‌های من",
 "Kind words from people around the world": "حرف‌های مهربان آدم‌ها از سراسر دنیا",
-"🌳 Tree of Humanity": "🌳 درخت انسانیت"
+"🌳 Tree of Humanity": "🌳 درخت انسانیت",
+"New: the Tree of Humanity is right beside Adiyogi. Find it in the places bar 🌳": "تازه: درخت انسانیت درست کنار آدی‌یوگی است. در نوار مکان‌ها پیدایش کن 🌳"
 }
 }; for (const l in T) { I18N[l] = I18N[l] || {}; Object.assign(I18N[l], T[l]); } })();
 (() => {
@@ -6554,6 +6556,33 @@ const ring = add(G, new THREE.TorusGeometry(3.4, .32, 6, 28), stone, 0, .3, 0); 
 add(G, new THREE.CylinderGeometry(3.15, 3.15, .08, 28), M(0xcdb58c), 0, .04, 0, false);
 const signG = new THREE.Group(); signG.position.set(-5.2, 0, 3.6); signG.rotation.y = -.9; G.add(signG); boardSign(signG, '🌳 Tree of Humanity', '#4a6b34', 0, 1.6, 0, 0, 2.6, .5);
 col(TX, TZ, 3.7); camBlockers.push(TB);
+
+/* ---------- easy to find: a lantern path from the Adiyogi plaza, a signpost, a glow and a floating name above the canopy, a place button ---------- */
+const PA = {x: 36.5, z: 76.5}, PB = {x: TX - 4.6, z: TZ - 1.2}, PDX = PB.x - PA.x, PDZ = PB.z - PA.z, PL = Math.hypot(PDX, PDZ);
+strip(PA.x, PA.z, PB.x, PB.z, 2.2);
+const lampMat = new THREE.MeshStandardMaterial({color: 0xf2c14e, emissive: 0x000000, roughness: .5}), LAN = [];
+for (let i = 0; i <= 5; i++) { const k = (i + .5)/6, sd = i % 2 ? 1 : -1, lx = PA.x + PDX*k - PDZ/PL*1.7*sd, lz = PA.z + PDZ*k + PDX/PL*1.7*sd;
+  add(scene, new THREE.CylinderGeometry(.06, .08, 1.15, 6), M(0x6b4a2a), lx, .57, lz); add(scene, new THREE.BoxGeometry(.28, .32, .28), lampMat, lx, 1.28, lz); add(scene, new THREE.ConeGeometry(.24, .18, 4), M(0x6b4a2a), lx, 1.53, lz);
+  const gl = glowAt(scene, lx, 1.3, lz, 1.6, 0xffc070); gl.visible = false; LAN.push(gl); col(lx, lz, .15); }
+// signpost at the plaza edge, facing the plaza, with an arrow towards the tree
+const SP = new THREE.Group(); SP.position.set(PA.x - 1.2, 0, PA.z - 2.2); SP.rotation.y = Math.atan2(-PDX, -PDZ) + .35; scene.add(SP); col(SP.position.x, SP.position.z, .4);
+boardSign(SP, '🌳 Tree of Humanity', '#4a6b34', 0, 2.0, 0, 0, 2.9, .55);
+{ const sh = new THREE.Shape(); sh.moveTo(-.75, -.13); sh.lineTo(.35, -.13); sh.lineTo(.35, -.26); sh.lineTo(.8, 0); sh.lineTo(.35, .26); sh.lineTo(.35, .13); sh.lineTo(-.75, .13); sh.lineTo(-.75, -.13);
+  const lx = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), SP.rotation.y), dir = (lx.x*PDX + lx.z*PDZ) >= 0 ? 1 : -1;
+  const ar = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshBasicMaterial({color: 0xf2a541, side: THREE.DoubleSide})); ar.position.set(0, 1.45, .01); ar.scale.x = dir; SP.add(ar); }
+// a soft golden glow rising from the canopy
+const BEAM = [glowAt(G, 0, 12.5, 0, 14, 0xffd27a), glowAt(G, 0, 16.5, 0, 9, 0xffe2a0), glowAt(G, 0, 20, 0, 6, 0xfff0c8)]; BEAM.forEach(b => { b.material.opacity = .32; b.material.fog = false; });
+// a floating name that you can see from far away
+const nameCv = document.createElement('canvas'); nameCv.width = 640; nameCv.height = 128; const nameTx = new THREE.CanvasTexture(nameCv); let nameKey = '';
+const NAME = new THREE.Sprite(new THREE.SpriteMaterial({map: nameTx, transparent: true, depthWrite: false, fog: false})); NAME.position.set(0, 15.2, 0); NAME.scale.set(9, 1.8, 1); NAME.renderOrder = 5; G.add(NAME);
+function drawName(){ const s = tr('🌳 Tree of Humanity'); if (s === nameKey) return; nameKey = s; const g = nameCv.getContext('2d'); g.clearRect(0, 0, 640, 128); g.font = '700 54px Mukta, "Segoe UI", sans-serif';
+  const w = Math.min(630, g.measureText(s).width + 70), x = (640 - w)/2; g.fillStyle = 'rgba(45,70,38,.82)'; g.beginPath(); g.moveTo(x + 50, 14); g.arcTo(x + w, 14, x + w, 114, 50); g.arcTo(x + w, 114, x, 114, 50); g.arcTo(x, 114, x, 14, 50); g.arcTo(x, 14, x + w, 14, 50); g.fill();
+  g.fillStyle = '#fff6df'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(s, 320, 66); nameTx.needsUpdate = true; }
+drawName();
+// a place button in the bottom bar (right after Adiyogi), with a little "new" dot until the first visit
+TABS.splice(3, 0, {label: '🌳 Tree of Humanity', x: TX - 7.4, z: TZ - 1.6, yaw: -Math.PI/2 - .42, pitch: .14, dist: 8.5});
+const markTab = () => { const b = document.querySelector('#tabs [data-tab="3"]'); if (b) b.classList.toggle('toh-new', !store('iy-tree-seen')); };
+const _renderTabs = renderTabs; renderTabs = function(){ _renderTabs(); markTab(); }; renderTabs();
 
 /* ---------- leaves = messages ---------- */
 const leafShape = new THREE.Shape(); leafShape.moveTo(0, -.32); leafShape.quadraticCurveTo(.26, -.05, 0, .34); leafShape.quadraticCurveTo(-.26, -.05, 0, -.32);
@@ -6630,11 +6659,15 @@ ACTIONS.tohWrite = () => open('write'); ACTIONS.tohMine = () => open('mine');
 
 /* ---------- near the tree: buttons; at night some leaves glow ---------- */
 window.__tohUI = (primary, sec) => { if (!TH.near) return null; return {primary: B_('🍃 Read a leaf', 'tohRead'), sec: [B_('🌿 Leave a message', 'tohWrite'), B_('🌳 My leaves', 'tohMine'), ...(primary ? [primary] : [])], name: tr('Tree of Humanity'), info: tr('Kind words from people around the world')}; };
-let nightT = 0;
+let nightT = 0, hintT = 2;
 window.__tohTick = (dt, t) => { const P = player.a.g.position, n = Math.hypot(P.x - TX, P.z - TZ) < NEAR && P.x > -1000 && P.x < 1000;
-  if (n !== TH.near) { TH.near = n; refreshUI(); if (n) load(); }
-  if (Math.hypot(P.x - TX, P.z - TZ) > 120) return;
-  if ((nightT -= dt) <= 0) { nightT = .5; const h = localHour(), nn = h > 18.6 || h < 5.6; if (nn !== night) { night = nn; paint(); } }
+  if (n !== TH.near) { TH.near = n; refreshUI(); if (n) { load(); if (!store('iy-tree-seen')) { store('iy-tree-seen', 1); markTab(); } } }
+  const dist = Math.hypot(P.x - TX, P.z - TZ);
+  NAME.visible = dist > 13 && dist < 170 && P.x > -1000 && P.x < 1000; if (NAME.visible) NAME.material.opacity = Math.min(1, (dist - 13)/8);
+  if ((hintT -= dt) <= 0) { hintT = 1; drawName(); if (zone === 'adiyogi' && !store('iy-tree-seen') && !store('iy-tree-hint')) { store('iy-tree-hint', 1); toast(tr('New: the Tree of Humanity is right beside Adiyogi. Find it in the places bar 🌳')); } }
+  BEAM.forEach((b, i) => b.material.opacity = (night ? .42 : .26) + .07*Math.sin(t*.9 + i*1.3));
+  if (dist > 120) return;
+  if ((nightT -= dt) <= 0) { nightT = .5; const h = localHour(), nn = h > 18.6 || h < 5.6; if (nn !== night) { night = nn; paint(); LAN.forEach(g => g.visible = night); lampMat.emissive.setHex(night ? 0xffa940 : 0x000000); } }
   sway(t);
   if (night) HALO.forEach((h, i) => { if (h.visible) h.material.opacity = .6 + .25*Math.sin(t*1.7 + i); });
   if (sparkT >= 0) { sparkT += dt; const p = spark.geometry.attributes.position; for (let i = 0; i < 40; i++) { const a = i*2.4, r = sparkT*2.2*(.4 + (i % 5)/5); p.setXYZ(i, sparkAt.x + Math.cos(a)*r, sparkAt.y + Math.sin(i)*r*.6 + sparkT, sparkAt.z + Math.sin(a)*r); }
