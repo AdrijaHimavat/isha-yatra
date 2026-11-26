@@ -31,6 +31,8 @@ th{color:var(--muted);font-weight:500;font-size:12px}
 .list div{display:grid;grid-template-columns:1fr 60px;gap:8px;align-items:center;margin:6px 0;font-size:14px}
 .err{color:#ffb4a2}
 [hidden]{display:none!important}
+#leaves td{vertical-align:top}#leaves td.tx{text-align:left;max-width:320px;white-space:normal}#leaves button{padding:4px 8px;font-size:12px;margin:2px}
+#leaves button.ghost{background:rgba(255,243,226,.08);color:var(--text);border:1px solid var(--line)}.st-pending{color:#ffd27a}.st-rejected,.st-hidden{color:#ffb4a2}.st-approved{color:var(--good)}
 </style>
 </head>
 <body>
@@ -54,6 +56,9 @@ th{color:var(--muted);font-weight:500;font-size:12px}
       <div class="card"><h2>Languages</h2><div class="list" id="langs"></div></div>
     </div>
     <div class="card"><h2>Where visits come from</h2><div class="list" id="refs"></div></div>
+    <div class="card"><h2>🌳 Tree of Humanity · leaves</h2>
+      <div class="row" style="margin-bottom:8px"><select id="lfF"><option value="">All</option><option value="pending">Pending</option><option value="rejected">Rejected</option><option value="hidden">Hidden</option><option value="approved">On the tree</option></select><span class="sub" id="lfN" style="margin:0"></span></div>
+      <div style="overflow-x:auto"><table id="leaves"></table></div></div>
     <p class="sub" id="when"></p>
   </div>
 </main>
@@ -105,7 +110,20 @@ async function load(){
   list('#zones', r.zones || [], 'tz', 'people'); list('#langs', r.langs || [], 'lang', 'people'); list('#refs', r.refs || [], 'ref', 'visits');
   $('#when').textContent = 'Days are counted in ' + r.tz + ' · updated ' + new Date().toLocaleTimeString();
   $('#out').hidden = false;
+  loadLeaves();
 }
+let LEAVES = [];
+async function leafRpc(body){ try { const res = await fetch(SB.url + '/rest/v1/rpc/leaf_admin', {method: 'POST', headers: {apikey: SB.key, 'Content-Type': 'application/json'}, body: JSON.stringify({p_pass: $('#pass').value, ...body})}); return res.ok ? await res.json() : null; } catch (_) { return null; } }
+function drawLeaves(){
+  const f = $('#lfF').value, L = LEAVES.filter(l => !f || l.status === f), ST = {approved: 'On the tree', pending: 'Pending', rejected: 'Rejected', hidden: 'Hidden'};
+  $('#lfN').textContent = L.length + ' of ' + LEAVES.length;
+  $('#leaves').innerHTML = L.length ? '<tr><th>When</th><th>Message</th><th>Lang</th><th>Status</th><th>Reports</th><th></th></tr>' + L.map(l => `<tr><td>${new Date(l.t).toLocaleString(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</td><td class="tx"><small class="sub">${esc(l.kind)}</small><br><span dir="auto">${esc(l.text)}</span></td><td>${esc(l.lang)}</td><td class="st-${esc(l.status)}">${esc(ST[l.status] || l.status)}${l.reason ? '<br><small class="sub">' + esc(l.reason) + '</small>' : ''}</td><td>${l.reports}</td><td>${l.status !== 'approved' ? `<button data-a="approve" data-id="${l.id}">Approve</button>` : ''}${l.status !== 'hidden' ? `<button class="ghost" data-a="hide" data-id="${l.id}">Hide</button>` : ''}<button class="ghost" data-a="delete" data-id="${l.id}">Delete</button></td></tr>`).join('') : '<tr><td class="sub">No leaves yet.</td></tr>';
+}
+async function loadLeaves(){ const r = await leafRpc({p_action: 'list'}); if (Array.isArray(r)) { LEAVES = r; drawLeaves(); } }
+$('#lfF').addEventListener('change', drawLeaves);
+$('#leaves').addEventListener('click', async e => { const b = e.target.closest('button[data-a]'); if (!b) return;
+  if (b.dataset.a === 'delete' && !confirm('Delete this leaf for good?')) return;
+  b.disabled = true; await leafRpc({p_action: b.dataset.a, p_id: b.dataset.id}); loadLeaves(); });
 $('#go').addEventListener('click', load);
 $('#pass').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
 if ($('#pass').value) load();
